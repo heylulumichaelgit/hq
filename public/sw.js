@@ -1,5 +1,5 @@
-const CACHE_NAME = "michael-family-v1";
-const STATIC_ASSETS = ["/", "/manifest.json"];
+const CACHE_NAME = "michael-family-v2";
+const STATIC_ASSETS = ["/manifest.json"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -22,13 +22,28 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.url.includes("/api/") || event.request.url.includes("supabase")) {
+  const url = event.request.url;
+
+  // Never cache API calls, Supabase requests, or navigation requests
+  if (
+    url.includes("/api/") ||
+    url.includes("supabase") ||
+    event.request.mode === "navigate"
+  ) {
     event.respondWith(
       fetch(event.request).catch(() => caches.match(event.request))
     );
-  } else {
-    event.respondWith(
-      caches.match(event.request).then((cached) => cached || fetch(event.request))
-    );
+    return;
   }
+
+  // Network-first for everything else, fall back to cache
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        return response;
+      })
+      .catch(() => caches.match(event.request))
+  );
 });
