@@ -76,35 +76,45 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
 
     const data = result.data;
 
-    if (isEditing && todo) {
-      await updateTodo.mutateAsync({
-        id: todo.id,
-        title: data.title,
-        description: data.description || null,
-        due_date: data.due_date || null,
-        priority: data.priority,
-        assigned_to: data.assigned_to,
-      });
-    } else {
-      await createTodo.mutateAsync({
-        title: data.title,
-        description: data.description || null,
-        due_date: data.due_date || null,
-        priority: data.priority,
-        assigned_to: data.assigned_to,
-        created_by: user!.id,
-      });
-    }
+    try {
+      if (isEditing && todo) {
+        await updateTodo.mutateAsync({
+          id: todo.id,
+          title: data.title,
+          description: data.description || null,
+          due_date: data.due_date || null,
+          priority: data.priority,
+          assigned_to: data.assigned_to,
+        });
+      } else {
+        await createTodo.mutateAsync({
+          title: data.title,
+          description: data.description || null,
+          due_date: data.due_date || null,
+          priority: data.priority,
+          assigned_to: data.assigned_to,
+          created_by: user!.id,
+        });
+      }
 
-    setOpen(false);
-    if (!isEditing) {
-      setForm({
-        title: "",
-        description: "",
-        due_date: "",
-        priority: "medium",
-        assigned_to: "Both",
-      });
+      setOpen(false);
+      if (!isEditing) {
+        setForm({
+          title: "",
+          description: "",
+          due_date: "",
+          priority: "medium",
+          assigned_to: "Both",
+        });
+      }
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === "object" && err !== null && "message" in err
+            ? String((err as { message: unknown }).message)
+            : "Something went wrong";
+      setErrors({ form: message });
     }
   };
 
@@ -213,6 +223,10 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
               </SelectContent>
             </Select>
           </div>
+
+          {errors.form && (
+            <p className="text-sm text-destructive">{errors.form}</p>
+          )}
 
           <div className="flex justify-end gap-3 pt-2">
             <Button
