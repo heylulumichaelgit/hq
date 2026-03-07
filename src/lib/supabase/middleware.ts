@@ -32,7 +32,9 @@ export async function updateSession(request: NextRequest) {
   );
 
   } catch (error) {
-    console.error('Supabase client creation failed:', error);
+    console.error('Supabase client creation failed:', error.message);
+    console.error('URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+    console.error('ANON KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
     return NextResponse.json({ error: 'Supabase client creation failed' }, { status: 500 });
   }
 
