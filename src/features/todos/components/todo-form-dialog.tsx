@@ -220,6 +220,7 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
                 <SelectItem value="Andrew">Andrew</SelectItem>
                 <SelectItem value="Chrystalla">Chrystalla</SelectItem>
                 <SelectItem value="Both">Both</SelectItem>
+                <SelectItem value="Lulu">Lulu ✨</SelectItem>
               </SelectContent>
             </Select>
           </div>
