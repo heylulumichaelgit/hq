@@ -1,5 +1,5 @@
 export type Priority = "low" | "medium" | "high";
-export type AssignedTo = "Andrew" | "Chrystalla" | "Both";
+export type AssignedTo = "Andrew" | "Chrystalla" | "Both" | "Lulu";
 
 export interface Database {
   public: {
