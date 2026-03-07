@@ -6,7 +6,9 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
-  const supabase = createServerClient(
+  let supabase;
+  try {
+    supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -29,9 +31,19 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  } catch (error) {
+    console.error('Supabase client creation failed:', error);
+    return NextResponse.json({ error: 'Supabase client creation failed' }, { status: 500 });
+  }
+
+  let user;
+  try {
+    const result = await supabase.auth.getUser();
+    user = result.data.user;
+  } catch (error) {
+    console.error('Failed to get user:', error);
+    return NextResponse.json({ error: 'Failed to get user' }, { status: 500 });
+  }
 
   if (
     !user &&
