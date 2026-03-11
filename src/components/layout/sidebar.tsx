@@ -39,10 +39,11 @@ export function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = async () => {
+    setMobileOpen(false);
     const supabase = createClient();
     await supabase.auth.signOut();
     reset();
-    router.push("/login");
+    window.location.href = "/login";
   };
 
   const sidebarContent = (
