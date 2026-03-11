@@ -15,18 +15,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.location.pathname.startsWith(p)
     );
 
+    const forceCleanLogout = () => {
+      document.cookie.split(";").forEach((c) => {
+        const name = c.trim().split("=")[0];
+        if (name.startsWith("sb-")) {
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+        }
+      });
+      supabase.auth.signOut().catch(() => {});
+      window.location.href = "/login";
+    };
+
     const initAuth = async () => {
       try {
+        // Timeout getUser — if the session is broken this can hang
+        const getUserPromise = supabase.auth.getUser();
+        const timeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Auth check timed out")), 8000)
+        );
+
         const {
           data: { user },
           error,
-        } = await supabase.auth.getUser();
+        } = await Promise.race([getUserPromise, timeout]);
 
         if (error || !user) {
-          // Session is invalid or expired — clean up and redirect to login
           if (!isAuthPage) {
-            await supabase.auth.signOut();
-            window.location.href = "/login";
+            forceCleanLogout();
             return;
           }
           setLoading(false);
@@ -41,10 +56,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .single();
         if (profile) setProfile(profile);
       } catch {
-        // Auth check failed entirely — force logout
         if (!isAuthPage) {
-          try { await supabase.auth.signOut(); } catch {}
-          window.location.href = "/login";
+          forceCleanLogout();
           return;
         }
       }

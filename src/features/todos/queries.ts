@@ -9,10 +9,16 @@ const TODOS_KEY = ["todos"];
 const QUERY_TIMEOUT_MS = 10_000;
 
 function forceLogout() {
-  const supabase = createClient();
-  supabase.auth.signOut().finally(() => {
-    window.location.href = "/login";
+  // Clear Supabase cookies directly — don't rely on signOut() which may hang
+  document.cookie.split(";").forEach((c) => {
+    const name = c.trim().split("=")[0];
+    if (name.startsWith("sb-")) {
+      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+    }
   });
+  const supabase = createClient();
+  supabase.auth.signOut().catch(() => {});
+  window.location.href = "/login";
 }
 
 function isAuthError(error: unknown): boolean {

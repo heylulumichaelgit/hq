@@ -38,11 +38,19 @@ export function Sidebar() {
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     setMobileOpen(false);
-    const supabase = createClient();
-    await supabase.auth.signOut();
     reset();
+    // Fire and forget — don't let a broken session block logout
+    const supabase = createClient();
+    supabase.auth.signOut().catch(() => {});
+    // Clear Supabase cookies manually in case signOut hangs
+    document.cookie.split(";").forEach((c) => {
+      const name = c.trim().split("=")[0];
+      if (name.startsWith("sb-")) {
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+      }
+    });
     window.location.href = "/login";
   };
 
