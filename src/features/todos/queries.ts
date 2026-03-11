@@ -6,6 +6,26 @@ import { useEffect } from "react";
 import type { Todo, TodoInsert, TodoUpdate } from "@/lib/supabase/types";
 
 const TODOS_KEY = ["todos"];
+const QUERY_TIMEOUT_MS = 10_000;
+
+function forceLogout() {
+  const supabase = createClient();
+  supabase.auth.signOut().finally(() => {
+    window.location.href = "/login";
+  });
+}
+
+function isAuthError(error: unknown): boolean {
+  const msg =
+    error instanceof Error ? error.message.toLowerCase() : String(error);
+  return (
+    msg.includes("jwt") ||
+    msg.includes("token") ||
+    msg.includes("auth") ||
+    msg.includes("refresh_token") ||
+    msg.includes("timed out")
+  );
+}
 
 export function useTodos() {
   const queryClient = useQueryClient();
@@ -33,13 +53,29 @@ export function useTodos() {
     queryKey: TODOS_KEY,
     queryFn: async () => {
       const supabase = createClient();
-      const { data, error } = await supabase
+
+      const query = supabase
         .from("todos")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data as Todo[];
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Query timed out")), QUERY_TIMEOUT_MS)
+      );
+
+      let result: { data: Todo[] | null; error: { message: string } | null };
+      try {
+        result = await Promise.race([query, timeout]) as typeof result;
+      } catch (err) {
+        if (isAuthError(err)) forceLogout();
+        throw err;
+      }
+
+      if (result.error) {
+        if (isAuthError(result.error)) forceLogout();
+        throw new Error(result.error.message);
+      }
+      return (result.data ?? []) as Todo[];
     },
   });
 }
