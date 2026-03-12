@@ -9,12 +9,16 @@ interface TodoFilters {
   completed: "all" | "completed" | "active";
   sortBy: "due_date" | "priority" | "created_at";
   sortOrder: "asc" | "desc";
+  search: string;
+  section: string | "all";
 }
 
 interface TodoFilterState {
   filters: TodoFilters;
+  collapsedSections: Set<string>;
   setFilter: <K extends keyof TodoFilters>(key: K, value: TodoFilters[K]) => void;
   resetFilters: () => void;
+  toggleSection: (section: string) => void;
 }
 
 const defaultFilters: TodoFilters = {
@@ -23,11 +27,24 @@ const defaultFilters: TodoFilters = {
   completed: "active",
   sortBy: "created_at",
   sortOrder: "desc",
+  search: "",
+  section: "all",
 };
 
 export const useTodoFilterStore = create<TodoFilterState>((set) => ({
   filters: defaultFilters,
+  collapsedSections: new Set<string>(),
   setFilter: (key, value) =>
     set((state) => ({ filters: { ...state.filters, [key]: value } })),
   resetFilters: () => set({ filters: defaultFilters }),
+  toggleSection: (section) =>
+    set((state) => {
+      const next = new Set(state.collapsedSections);
+      if (next.has(section)) {
+        next.delete(section);
+      } else {
+        next.add(section);
+      }
+      return { collapsedSections: next };
+    }),
 }));

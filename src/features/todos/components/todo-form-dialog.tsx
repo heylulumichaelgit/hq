@@ -19,11 +19,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCreateTodo, useUpdateTodo } from "../queries";
+import { useCreateTodo, useUpdateTodo, useSections } from "../queries";
 import { useAuthStore } from "@/features/auth/store";
 import { todoSchema } from "../schema";
 import type { Todo } from "@/lib/supabase/types";
-import { Plus, Pencil, Loader2 } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 interface TodoFormDialogProps {
@@ -37,24 +37,31 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
   const { user } = useAuthStore();
   const createTodo = useCreateTodo();
   const updateTodo = useUpdateTodo();
+  const existingSections = useSections();
 
   const isEditing = !!todo;
 
   const [form, setForm] = useState({
     title: todo?.title ?? "",
     description: todo?.description ?? "",
-    due_date: todo?.due_date ? format(new Date(todo.due_date), "yyyy-MM-dd") : "",
+    due_date: todo?.due_date
+      ? format(new Date(todo.due_date), "yyyy-MM-dd")
+      : "",
     priority: todo?.priority ?? "medium",
     assigned_to: todo?.assigned_to ?? "Both",
+    section: todo?.section ?? "",
   });
 
   const resetForm = () => {
     setForm({
       title: todo?.title ?? "",
       description: todo?.description ?? "",
-      due_date: todo?.due_date ? format(new Date(todo.due_date), "yyyy-MM-dd") : "",
+      due_date: todo?.due_date
+        ? format(new Date(todo.due_date), "yyyy-MM-dd")
+        : "",
       priority: todo?.priority ?? "medium",
       assigned_to: todo?.assigned_to ?? "Both",
+      section: todo?.section ?? "",
     });
     setErrors({});
   };
@@ -85,6 +92,7 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
           due_date: data.due_date || null,
           priority: data.priority,
           assigned_to: data.assigned_to,
+          section: data.section || null,
         });
       } else {
         await createTodo.mutateAsync({
@@ -93,6 +101,7 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
           due_date: data.due_date || null,
           priority: data.priority,
           assigned_to: data.assigned_to,
+          section: data.section || null,
           created_by: user!.id,
         });
       }
@@ -105,6 +114,7 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
           due_date: "",
           priority: "medium",
           assigned_to: "Both",
+          section: "",
         });
       }
     } catch (err: unknown) {
@@ -146,7 +156,9 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
             <Input
               id="title"
               value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, title: e.target.value }))
+              }
               placeholder="What needs to be done?"
               className="min-h-[48px]"
             />
@@ -187,7 +199,10 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
               <Select
                 value={form.priority}
                 onValueChange={(v) =>
-                  setForm((f) => ({ ...f, priority: v as typeof f.priority }))
+                  setForm((f) => ({
+                    ...f,
+                    priority: v as typeof f.priority,
+                  }))
                 }
               >
                 <SelectTrigger className="min-h-[48px]">
@@ -202,27 +217,48 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Assigned To</Label>
-            <Select
-              value={form.assigned_to}
-              onValueChange={(v) =>
-                setForm((f) => ({
-                  ...f,
-                  assigned_to: v as typeof f.assigned_to,
-                }))
-              }
-            >
-              <SelectTrigger className="min-h-[48px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Andrew">Andrew</SelectItem>
-                <SelectItem value="Chrystalla">Chrystalla</SelectItem>
-                <SelectItem value="Both">Both</SelectItem>
-                <SelectItem value="Lulu">Lulu ✨</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Assigned To</Label>
+              <Select
+                value={form.assigned_to}
+                onValueChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    assigned_to: v as typeof f.assigned_to,
+                  }))
+                }
+              >
+                <SelectTrigger className="min-h-[48px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Andrew">Andrew</SelectItem>
+                  <SelectItem value="Chrystalla">Chrystalla</SelectItem>
+                  <SelectItem value="Both">Both</SelectItem>
+                  <SelectItem value="Lulu">Lulu</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="section">Section</Label>
+              <Input
+                id="section"
+                value={form.section}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, section: e.target.value }))
+                }
+                placeholder="e.g. House, Admin, Kids"
+                className="min-h-[48px]"
+                list="section-suggestions"
+              />
+              <datalist id="section-suggestions">
+                {existingSections.map((s) => (
+                  <option key={s} value={s} />
+                ))}
+              </datalist>
+            </div>
           </div>
 
           {errors.form && (
@@ -238,7 +274,11 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
             >
               Cancel
             </Button>
-            <Button type="submit" className="min-h-[48px]" disabled={isPending}>
+            <Button
+              type="submit"
+              className="min-h-[48px]"
+              disabled={isPending}
+            >
               {isPending ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : isEditing ? (

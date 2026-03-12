@@ -37,6 +37,9 @@ export interface Database {
           assigned_to: AssignedTo;
           created_by: string;
           is_completed: boolean;
+          parent_id: string | null;
+          section: string | null;
+          position: number;
           created_at: string;
           updated_at: string;
         };
@@ -49,6 +52,9 @@ export interface Database {
           assigned_to?: AssignedTo;
           created_by: string;
           is_completed?: boolean;
+          parent_id?: string | null;
+          section?: string | null;
+          position?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -61,8 +67,37 @@ export interface Database {
           assigned_to?: AssignedTo;
           created_by?: string;
           is_completed?: boolean;
+          parent_id?: string | null;
+          section?: string | null;
+          position?: number;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      push_subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          endpoint?: string;
+          p256dh?: string;
+          auth?: string;
+          created_at?: string;
         };
       };
     };
@@ -79,3 +114,4 @@ export type Todo = Database["public"]["Tables"]["todos"]["Row"];
 export type TodoInsert = Database["public"]["Tables"]["todos"]["Insert"];
 export type TodoUpdate = Database["public"]["Tables"]["todos"]["Update"];
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+export type PushSubscription = Database["public"]["Tables"]["push_subscriptions"]["Row"];

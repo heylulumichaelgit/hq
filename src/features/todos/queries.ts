@@ -9,7 +9,6 @@ const TODOS_KEY = ["todos"];
 const QUERY_TIMEOUT_MS = 10_000;
 
 function forceLogout() {
-  // Clear Supabase cookies directly — don't rely on signOut() which may hang
   document.cookie.split(";").forEach((c) => {
     const name = c.trim().split("=")[0];
     if (name.startsWith("sb-")) {
@@ -36,7 +35,6 @@ function isAuthError(error: unknown): boolean {
 export function useTodos() {
   const queryClient = useQueryClient();
 
-  // Set up realtime subscription
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
@@ -71,7 +69,7 @@ export function useTodos() {
 
       let result: { data: Todo[] | null; error: { message: string } | null };
       try {
-        result = await Promise.race([query, timeout]) as typeof result;
+        result = (await Promise.race([query, timeout])) as typeof result;
       } catch (err) {
         if (isAuthError(err)) forceLogout();
         throw err;
@@ -171,4 +169,31 @@ export function useToggleTodo() {
       queryClient.invalidateQueries({ queryKey: TODOS_KEY });
     },
   });
+}
+
+/** Get all unique section names from existing todos */
+export function useSections() {
+  const { data: todos } = useTodos();
+
+  const sections = Array.from(
+    new Set(
+      (todos ?? [])
+        .map((t) => t.section)
+        .filter((s): s is string => !!s)
+    )
+  ).sort();
+
+  return sections;
+}
+
+/** Get subtasks count summary for a parent todo */
+export function getSubtaskProgress(
+  todos: Todo[],
+  parentId: string
+): { total: number; completed: number } {
+  const subtasks = todos.filter((t) => t.parent_id === parentId);
+  return {
+    total: subtasks.length,
+    completed: subtasks.filter((t) => t.is_completed).length,
+  };
 }

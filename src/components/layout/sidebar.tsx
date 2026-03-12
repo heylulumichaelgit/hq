@@ -23,6 +23,7 @@ import { useTheme } from "next-themes";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { PushToggle } from "@/features/notifications/push-toggle";
 
 const navItems = [
   { href: "/todos", label: "Todos", icon: CheckSquare, ready: true },
@@ -102,9 +103,10 @@ export function Sidebar() {
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary text-sm font-bold">
               {profile.display_name.charAt(0)}
             </div>
-            <span className="text-sm font-medium truncate">
+            <span className="text-sm font-medium truncate flex-1">
               {profile.display_name}
             </span>
+            <PushToggle />
           </div>
         )}
 

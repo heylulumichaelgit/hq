@@ -1,4 +1,4 @@
-const CACHE_NAME = "michael-family-v2";
+const CACHE_NAME = "michael-family-v3";
 const STATIC_ASSETS = ["/manifest.json"];
 
 self.addEventListener("install", (event) => {
@@ -45,5 +45,58 @@ self.addEventListener("fetch", (event) => {
         return response;
       })
       .catch(() => caches.match(event.request))
+  );
+});
+
+// Push notification handler
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+
+  let data;
+  try {
+    data = event.data.json();
+  } catch {
+    data = { title: "Michael Family", body: event.data.text() };
+  }
+
+  const options = {
+    body: data.body || "",
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    vibrate: [100, 50, 100],
+    data: {
+      url: data.url || "/todos",
+    },
+    actions: [
+      { action: "open", title: "Open" },
+      { action: "dismiss", title: "Dismiss" },
+    ],
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Michael Family", options)
+  );
+});
+
+// Notification click handler
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  if (event.action === "dismiss") return;
+
+  const url = event.notification.data?.url || "/todos";
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      // Focus existing window if available
+      for (const client of clients) {
+        if (client.url.includes(self.location.origin) && "focus" in client) {
+          client.navigate(url);
+          return client.focus();
+        }
+      }
+      // Open new window
+      return self.clients.openWindow(url);
+    })
   );
 });
