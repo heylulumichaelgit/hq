@@ -100,7 +100,7 @@ export default function ResetPasswordPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={8}
-                    className="min-h-[48px]"
+                    className="h-9"
                   />
                 </div>
                 <div className="space-y-2">
@@ -113,7 +113,7 @@ export default function ResetPasswordPage() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     minLength={8}
-                    className="min-h-[48px]"
+                    className="h-9"
                   />
                 </div>
                 {error && (
@@ -121,7 +121,7 @@ export default function ResetPasswordPage() {
                 )}
                 <Button
                   type="submit"
-                  className="w-full min-h-[48px]"
+                  className="w-full h-9"
                   disabled={loading}
                 >
                   {loading ? (

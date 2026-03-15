@@ -15,51 +15,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.location.pathname.startsWith(p)
     );
 
-    const forceCleanLogout = () => {
-      document.cookie.split(";").forEach((c) => {
-        const name = c.trim().split("=")[0];
-        if (name.startsWith("sb-")) {
-          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-        }
-      });
-      supabase.auth.signOut().catch(() => {});
-      window.location.href = "/login";
+    const loadProfile = async (userId: string) => {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      if (profile) setProfile(profile);
     };
 
     const initAuth = async () => {
       try {
-        // Timeout getUser — if the session is broken this can hang
-        const getUserPromise = supabase.auth.getUser();
-        const timeout = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Auth check timed out")), 8000)
-        );
-
+        // getSession() reads from local cookies — no network call, no timeout risk.
+        // The Next.js middleware validates sessions cryptographically on every
+        // server request, so we don't need to call the Supabase auth server here.
         const {
-          data: { user },
-          error,
-        } = await Promise.race([getUserPromise, timeout]);
+          data: { session },
+        } = await supabase.auth.getSession();
 
-        if (error || !user) {
-          if (!isAuthPage) {
-            forceCleanLogout();
-            return;
-          }
+        if (!session) {
+          if (!isAuthPage) window.location.href = "/login";
           setLoading(false);
           return;
         }
 
-        setUser(user);
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-        if (profile) setProfile(profile);
+        setUser(session.user);
+        await loadProfile(session.user.id);
       } catch {
-        if (!isAuthPage) {
-          forceCleanLogout();
-          return;
-        }
+        // A network/profile error is NOT a reason to log the user out.
+        // The middleware will redirect unauthenticated requests server-side.
       }
       setLoading(false);
     };
@@ -68,19 +52,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       const user = session?.user ?? null;
       setUser(user);
+
       if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-        if (profile) setProfile(profile);
+        await loadProfile(user.id);
       } else {
         setProfile(null);
+        // Only redirect on a genuine sign-out (session expired, explicit logout).
+        if (!isAuthPage) window.location.href = "/login";
       }
+
       setLoading(false);
     });
 

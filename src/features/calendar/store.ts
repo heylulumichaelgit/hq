@@ -10,10 +10,12 @@ interface CalendarViewState {
   currentDate: Date;
   weekStart: Date;
   weekEnd: Date;
+  view: "week" | "schedule";
   setCurrentDate: (date: Date) => void;
   goToToday: () => void;
   goForward: () => void;
   goBack: () => void;
+  setView: (view: "week" | "schedule") => void;
 }
 
 function weekBounds(date: Date) {
@@ -28,6 +30,7 @@ export const useCalendarStore = create<CalendarViewState>((set) => {
   return {
     currentDate: now,
     ...weekBounds(now),
+    view: "schedule",
 
     setCurrentDate: (date) => set({ currentDate: date, ...weekBounds(date) }),
 
@@ -47,5 +50,7 @@ export const useCalendarStore = create<CalendarViewState>((set) => {
         const prev = subWeeks(s.currentDate, 1);
         return { currentDate: prev, ...weekBounds(prev) };
       }),
+
+    setView: (view) => set({ view }),
   };
 });

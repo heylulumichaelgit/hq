@@ -51,20 +51,23 @@ export async function GET(request: NextRequest) {
   const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
   const { data: googleUser } = await oauth2.userinfo.get();
 
-  // Upsert token record
+  const googleEmail = googleUser.email ?? "";
+
+  // Upsert token record — unique per (user_id, google_email) so each Google
+  // account gets its own row and doesn't overwrite the others.
   const { error: upsertError } = await supabase
     .from("google_calendar_tokens")
     .upsert(
       {
         user_id: user.id,
-        google_email: googleUser.email ?? "",
+        google_email: googleEmail,
         refresh_token: tokens.refresh_token,
         access_token: tokens.access_token ?? null,
         token_expiry: tokens.expiry_date
           ? new Date(tokens.expiry_date).toISOString()
           : null,
       },
-      { onConflict: "user_id" }
+      { onConflict: "user_id,google_email" }
     );
 
   if (upsertError) {
@@ -78,6 +81,7 @@ export async function GET(request: NextRequest) {
 
   const selections = (calendarList.items ?? []).map((c) => ({
     user_id: user.id,
+    google_email: googleEmail,
     calendar_id: c.id ?? "",
     calendar_name: c.summary ?? "",
     show_in_family_view: true,

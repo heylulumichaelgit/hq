@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -7,42 +8,73 @@ import {
   ShoppingCart,
   Calendar,
   Plane,
-  Home,
   LogOut,
   Sun,
   Moon,
-  Menu,
-  X,
   Plus,
-  Folder,
   Pencil,
   Trash2,
   Inbox,
   Star,
   BarChart2,
+  CirclePlus,
+  MoreHorizontal,
 } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuGroup,
+} from "@/components/ui/dropdown-menu";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuAction,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "@/components/ui/sidebar";
 import { useAuthStore } from "@/features/auth/store";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { PushToggle } from "@/features/notifications/push-toggle";
-import { useProjects, useCreateProject, useDeleteProject, useUpdateProject } from "@/features/projects/queries";
+import {
+  useProjects,
+  useCreateProject,
+  useDeleteProject,
+  useUpdateProject,
+} from "@/features/projects/queries";
 
-const navItems = [
-  { href: "/todos/today", label: "Today", icon: Star, ready: true },
-  { href: "/todos/upcoming", label: "Upcoming", icon: Calendar, ready: true },
-  { href: "/todos", label: "Inbox", icon: Inbox, ready: true },
-  { href: "/todos/completed", label: "Completed", icon: CheckSquare, ready: true },
-  { href: "/todos/stats", label: "Stats", icon: BarChart2, ready: true },
-  { href: "/grocery", label: "Grocery List", icon: ShoppingCart, ready: false },
-  { href: "/calendar", label: "Calendar", icon: Calendar, ready: true },
-  { href: "/bookings", label: "Bookings", icon: Plane, ready: false },
+const navMain = [
+  { href: "/todos/today", label: "Today", icon: Star },
+  { href: "/todos/upcoming", label: "Upcoming", icon: Calendar },
+  { href: "/todos", label: "Inbox", icon: Inbox },
+  { href: "/todos/completed", label: "Completed", icon: CheckSquare },
+  { href: "/calendar", label: "Calendar", icon: Calendar },
+];
+
+const navBottom = [
+  { href: "/todos/stats", label: "Stats", icon: BarChart2 },
+];
+
+const navSecondary = [
+  { href: "/grocery", label: "Grocery List", icon: ShoppingCart },
+  { href: "/bookings", label: "Bookings", icon: Plane },
 ];
 
 const PROJECT_COLORS = [
@@ -50,12 +82,11 @@ const PROJECT_COLORS = [
   "#22c55e", "#14b8a6", "#3b82f6", "#a855f7", "#ec4899",
 ];
 
-export function Sidebar() {
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
   const { profile, reset } = useAuthStore();
-  const router = useRouter();
   const { theme, setTheme } = useTheme();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const { isMobile } = useSidebar();
   const { data: projects = [] } = useProjects();
   const createProject = useCreateProject();
   const deleteProject = useDeleteProject();
@@ -91,12 +122,9 @@ export function Sidebar() {
   };
 
   const handleLogout = () => {
-    setMobileOpen(false);
     reset();
-    // Fire and forget — don't let a broken session block logout
     const supabase = createClient();
     supabase.auth.signOut().catch(() => {});
-    // Clear Supabase cookies manually in case signOut hangs
     document.cookie.split(";").forEach((c) => {
       const name = c.trim().split("=")[0];
       if (name.startsWith("sb-")) {
@@ -106,273 +134,328 @@ export function Sidebar() {
     window.location.href = "/login";
   };
 
-  const sidebarContent = (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center gap-3 px-4 py-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-lg">
-          M
-        </div>
-        <div>
-          <h1 className="text-lg font-bold">Michael Family</h1>
-          <p className="text-xs text-muted-foreground">Family Hub</p>
-        </div>
-      </div>
-
-      <Separator />
-
-      <nav className="flex-1 overflow-y-auto space-y-1 p-3">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.ready ? item.href : "#"}
-              onClick={() => setMobileOpen(false)}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors min-h-[48px]",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                !item.ready && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              <item.icon className="h-5 w-5 shrink-0" />
-              <span>{item.label}</span>
-              {!item.ready && (
-                <span className="ml-auto text-xs opacity-70">Soon</span>
-              )}
-            </Link>
-          );
-        })}
-
-        {/* Projects section */}
-        <div className="pt-3">
-          <div className="flex items-center justify-between px-3 pb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Projects
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => setAddingProject(true)}
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-
-          {projects.map((project) => {
-            const isActive = pathname === `/todos/project/${project.id}`;
-            return (
-              <div key={project.id} className="group relative">
-                {editingProjectId === project.id ? (
-                  <div className="flex items-center gap-1 px-3 py-1">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: project.color }}
-                    />
-                    <Input
-                      value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleRenameProject(project.id);
-                        if (e.key === "Escape") setEditingProjectId(null);
-                      }}
-                      onBlur={() => handleRenameProject(project.id)}
-                      className="h-7 text-xs px-1 border-0 shadow-none focus-visible:ring-1"
-                      autoFocus
-                    />
-                  </div>
-                ) : (
-                  <Link
-                    href={`/todos/project/${project.id}`}
-                    onClick={() => setMobileOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors min-h-[40px]",
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                    )}
-                  >
-                    <span
-                      className="h-2.5 w-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: project.color }}
-                    />
-                    <span className="flex-1 truncate">{project.name}</span>
-                    <span className="hidden group-hover:flex items-center gap-0.5">
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setEditingProjectId(project.id);
-                          setEditingName(project.name);
-                        }}
-                        className="p-0.5 rounded hover:bg-background/50"
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          deleteProject.mutate(project.id);
-                        }}
-                        className="p-0.5 rounded hover:bg-background/50 text-destructive"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </span>
-                  </Link>
-                )}
-              </div>
-            );
-          })}
-
-          {/* New project inline form */}
-          <AnimatePresence>
-            {addingProject && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="px-3 py-2 space-y-2"
-              >
-                <Input
-                  ref={newProjectInputRef}
-                  value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleCreateProject();
-                    if (e.key === "Escape") {
-                      setAddingProject(false);
-                      setNewProjectName("");
-                    }
-                  }}
-                  placeholder="Project name..."
-                  className="h-8 text-sm"
-                />
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {PROJECT_COLORS.map((c) => (
-                    <button
-                      key={c}
-                      onClick={() => setNewProjectColor(c)}
-                      className={cn(
-                        "h-5 w-5 rounded-full transition-transform",
-                        newProjectColor === c && "ring-2 ring-offset-1 ring-foreground scale-110"
-                      )}
-                      style={{ backgroundColor: c }}
-                    />
-                  ))}
-                </div>
-                <div className="flex gap-1">
-                  <Button
-                    size="sm"
-                    className="h-7 flex-1 text-xs"
-                    onClick={handleCreateProject}
-                    disabled={!newProjectName.trim() || createProject.isPending}
-                  >
-                    Add
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-xs"
-                    onClick={() => {
-                      setAddingProject(false);
-                      setNewProjectName("");
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </nav>
-
-      <Separator />
-
-      <div className="p-3 space-y-2">
-        {profile && (
-          <div className="flex items-center gap-3 px-3 py-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary text-sm font-bold">
-              {profile.display_name.charAt(0)}
-            </div>
-            <span className="text-sm font-medium truncate flex-1">
-              {profile.display_name}
-            </span>
-            <PushToggle />
-          </div>
-        )}
-
-        <Button
-          variant="ghost"
-          className="w-full justify-start gap-3 min-h-[48px]"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        >
-          {theme === "dark" ? (
-            <Sun className="h-5 w-5" />
-          ) : (
-            <Moon className="h-5 w-5" />
-          )}
-          <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
-        </Button>
-
-        <Button
-          variant="ghost"
-          className="w-full justify-start gap-3 min-h-[48px] text-destructive hover:text-destructive"
-          onClick={handleLogout}
-        >
-          <LogOut className="h-5 w-5" />
-          <span>Sign Out</span>
-        </Button>
-      </div>
-    </div>
-  );
-
   return (
-    <>
-      {/* Mobile hamburger */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center gap-3 border-b bg-background px-4 py-3 md:hidden">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="min-h-[48px] min-w-[48px]"
-          onClick={() => setMobileOpen(!mobileOpen)}
-        >
-          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </Button>
-        <Home className="h-5 w-5" />
-        <span className="font-bold">Michael Family</span>
-      </div>
-
-      {/* Mobile sidebar overlay */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/50 md:hidden"
-              onClick={() => setMobileOpen(false)}
-            />
-            <motion.aside
-              initial={{ x: -280 }}
-              animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed left-0 top-0 z-50 h-full w-[280px] border-r bg-background md:hidden"
+    <Sidebar collapsible="offcanvas" {...props}>
+      {/* ── Header: brand ── */}
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
-              {sidebarContent}
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+              <Link href="/todos">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-bold shrink-0">
+                  M
+                </div>
+                <span className="text-base font-semibold">HQ</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
 
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:w-[260px] md:shrink-0 md:flex-col md:border-r md:bg-background h-screen sticky top-0">
-        {sidebarContent}
-      </aside>
-    </>
+      <SidebarContent>
+        {/* ── Nav Main ── */}
+        <SidebarGroup>
+          <SidebarGroupContent className="flex flex-col gap-2">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  tooltip="Add Todo"
+                  className="min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+                >
+                  <Link href="/todos?new=1">
+                    <CirclePlus className="size-4" />
+                    <span>Add Todo</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+
+            <SidebarMenu>
+              {navMain.map((item) => {
+                const isActive =
+                  item.href === "/todos"
+                    ? pathname === "/todos"
+                    : pathname === item.href ||
+                      pathname.startsWith(item.href + "/");
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.label}>
+                      <Link href={item.href}>
+                        <item.icon className="size-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* ── Projects ── */}
+        <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+          <SidebarGroupLabel className="flex items-center">
+            Projects
+            <button
+              onClick={() => setAddingProject(true)}
+              className="ml-auto flex h-5 w-5 items-center justify-center rounded-sm hover:bg-sidebar-accent text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors"
+            >
+              <Plus className="h-3 w-3" />
+              <span className="sr-only">New project</span>
+            </button>
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {projects.map((project) => {
+                const isActive = pathname === `/todos/project/${project.id}`;
+                return (
+                  <SidebarMenuItem key={project.id}>
+                    {editingProjectId === project.id ? (
+                      <div className="flex items-center gap-1.5 px-2 py-1">
+                        <span
+                          className="h-2 w-2 rounded-full shrink-0"
+                          style={{ backgroundColor: project.color }}
+                        />
+                        <Input
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleRenameProject(project.id);
+                            if (e.key === "Escape") setEditingProjectId(null);
+                          }}
+                          onBlur={() => handleRenameProject(project.id)}
+                          className="h-6 text-xs px-1 border-0 shadow-none focus-visible:ring-1"
+                          autoFocus
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <SidebarMenuButton asChild isActive={isActive}>
+                          <Link href={`/todos/project/${project.id}`}>
+                            <span
+                              className="h-2 w-2 rounded-full shrink-0"
+                              style={{ backgroundColor: project.color }}
+                            />
+                            <span>{project.name}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <SidebarMenuAction
+                              showOnHover
+                              className="rounded-sm data-[state=open]:bg-accent"
+                            >
+                              <MoreHorizontal className="size-3.5" />
+                              <span className="sr-only">More</span>
+                            </SidebarMenuAction>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            className="w-32 rounded-lg"
+                            side={isMobile ? "bottom" : "right"}
+                            align={isMobile ? "end" : "start"}
+                          >
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setEditingProjectId(project.id);
+                                setEditingName(project.name);
+                              }}
+                            >
+                              <Pencil className="size-3.5" />
+                              Rename
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onClick={() => deleteProject.mutate(project.id)}
+                            >
+                              <Trash2 className="size-3.5" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </>
+                    )}
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+
+            <AnimatePresence>
+              {addingProject && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="px-2 py-2 space-y-2"
+                >
+                  <Input
+                    ref={newProjectInputRef}
+                    value={newProjectName}
+                    onChange={(e) => setNewProjectName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleCreateProject();
+                      if (e.key === "Escape") {
+                        setAddingProject(false);
+                        setNewProjectName("");
+                      }
+                    }}
+                    placeholder="Project name..."
+                    className="h-7 text-xs"
+                  />
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {PROJECT_COLORS.map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => setNewProjectColor(c)}
+                        className={cn(
+                          "h-4 w-4 rounded-full transition-transform",
+                          newProjectColor === c &&
+                            "ring-2 ring-offset-1 ring-foreground scale-110"
+                        )}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      className="h-6 flex-1 text-xs"
+                      onClick={handleCreateProject}
+                      disabled={!newProjectName.trim() || createProject.isPending}
+                    >
+                      Add
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 text-xs"
+                      onClick={() => {
+                        setAddingProject(false);
+                        setNewProjectName("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* ── Bottom nav (Stats + Coming Soon) ── */}
+        <SidebarGroup className="mt-auto group-data-[collapsible=icon]:hidden">
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navBottom.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.label}>
+                      <Link href={item.href}>
+                        <item.icon className="size-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+              {navSecondary.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton disabled className="opacity-50 cursor-not-allowed">
+                    <item.icon className="size-4" />
+                    <span>{item.label}</span>
+                    <span className="ml-auto text-[10px] text-muted-foreground">Soon</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      {/* ── Footer: user dropdown ── */}
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                  size="lg"
+                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                >
+                  <Avatar className="h-8 w-8 rounded-lg">
+                    <AvatarFallback className="rounded-lg bg-primary/20 text-primary text-sm font-bold">
+                      {profile?.display_name?.charAt(0) ?? "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-medium">
+                      {profile?.display_name ?? "Loading…"}
+                    </span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {profile?.email ?? ""}
+                    </span>
+                  </div>
+                  <MoreHorizontal className="ml-auto size-4" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+                side={isMobile ? "bottom" : "right"}
+                align="end"
+                sideOffset={4}
+              >
+                <DropdownMenuLabel className="p-0 font-normal">
+                  <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                    <Avatar className="h-8 w-8 rounded-lg">
+                      <AvatarFallback className="rounded-lg bg-primary/20 text-primary text-sm font-bold">
+                        {profile?.display_name?.charAt(0) ?? "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="grid flex-1 text-left text-sm leading-tight">
+                      <span className="truncate font-medium">
+                        {profile?.display_name}
+                      </span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {profile?.email}
+                      </span>
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  >
+                    {theme === "dark" ? (
+                      <Sun className="size-4" />
+                    ) : (
+                      <Moon className="size-4" />
+                    )}
+                    {theme === "dark" ? "Light Mode" : "Dark Mode"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <div className="flex items-center gap-2 px-2 py-1.5 cursor-default select-none rounded-sm text-sm hover:bg-accent">
+                      <span className="flex-1">Notifications</span>
+                      <PushToggle />
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onClick={handleLogout}>
+                  <LogOut className="size-4" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+    </Sidebar>
   );
 }

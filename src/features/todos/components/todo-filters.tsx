@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,10 +11,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 import { useTodoFilterStore } from "../store";
 import { useSections } from "../queries";
 import { useLabels } from "@/features/labels/queries";
@@ -21,34 +24,44 @@ import {
   Search,
   RotateCcw,
   ArrowUpDown,
-  Filter,
+  SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type ChipValue = string;
-
 function FilterChip({
   label,
-  value,
   isActive,
   onClick,
+  color,
 }: {
   label: string;
-  value: ChipValue;
   isActive: boolean;
   onClick: () => void;
+  color?: string;
 }) {
   return (
     <button
       onClick={onClick}
       className={cn(
-        "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium transition-colors",
-        "border cursor-pointer",
+        "inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-colors border cursor-pointer",
         isActive
           ? "bg-primary text-primary-foreground border-primary"
           : "bg-background text-muted-foreground border-input hover:bg-accent hover:text-foreground"
       )}
+      style={
+        color && isActive
+          ? { backgroundColor: color + "30", borderColor: color + "80", color }
+          : color
+          ? { borderColor: color + "50", color }
+          : undefined
+      }
     >
+      {color && (
+        <span
+          className="mr-1.5 h-1.5 w-1.5 rounded-full shrink-0"
+          style={{ backgroundColor: color }}
+        />
+      )}
       {label}
     </button>
   );
@@ -58,19 +71,24 @@ export function TodoFilters() {
   const { filters, setFilter, resetFilters } = useTodoFilterStore();
   const sections = useSections();
   const { data: labels = [] } = useLabels();
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+
+  const activeFilterCount = [
+    filters.assignedTo !== "all",
+    filters.priority !== "all",
+    filters.completed !== "active",
+    filters.section !== "all",
+    filters.labelId !== null,
+  ].filter(Boolean).length;
 
   const hasActiveFilters =
-    filters.assignedTo !== "all" ||
-    filters.priority !== "all" ||
-    filters.completed !== "active" ||
+    activeFilterCount > 0 ||
     filters.search !== "" ||
-    filters.section !== "all" ||
-    filters.labelId !== null ||
     filters.sortBy !== "created_at" ||
     filters.sortOrder !== "desc";
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {/* Search bar */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -82,131 +100,25 @@ export function TodoFilters() {
         />
       </div>
 
-      {/* Filter chips row */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Filter className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+      {/* Compact filter bar */}
+      <div className="flex items-center gap-2">
+        {/* Filter button */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-2 text-xs"
+          onClick={() => setFilterSheetOpen(true)}
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          Filters
+          {activeFilterCount > 0 && (
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground font-bold">
+              {activeFilterCount}
+            </span>
+          )}
+        </Button>
 
-        {/* Status chips */}
-        <FilterChip
-          label="Active"
-          value="active"
-          isActive={filters.completed === "active"}
-          onClick={() =>
-            setFilter("completed", filters.completed === "active" ? "all" : "active")
-          }
-        />
-        <FilterChip
-          label="Done"
-          value="completed"
-          isActive={filters.completed === "completed"}
-          onClick={() =>
-            setFilter(
-              "completed",
-              filters.completed === "completed" ? "all" : "completed"
-            )
-          }
-        />
-
-        <span className="h-4 w-px bg-border" />
-
-        {/* Priority chips */}
-        {(["high", "medium", "low"] as const).map((p) => (
-          <FilterChip
-            key={p}
-            label={p === "high" ? "High" : p === "medium" ? "Med" : "Low"}
-            value={p}
-            isActive={filters.priority === p}
-            onClick={() =>
-              setFilter("priority", filters.priority === p ? "all" : p)
-            }
-          />
-        ))}
-
-        <span className="h-4 w-px bg-border" />
-
-        {/* Person chips */}
-        {(["Andrew", "Chrystalla", "Both", "Lulu"] as const).map((person) => (
-          <FilterChip
-            key={person}
-            label={person}
-            value={person}
-            isActive={filters.assignedTo === person}
-            onClick={() =>
-              setFilter(
-                "assignedTo",
-                filters.assignedTo === person ? "all" : person
-              )
-            }
-          />
-        ))}
-
-        {/* Label filter chips (only if labels exist) */}
-        {labels.length > 0 && (
-          <>
-            <span className="h-4 w-px bg-border" />
-            {labels.map((label) => (
-              <button
-                key={label.id}
-                onClick={() =>
-                  setFilter("labelId", filters.labelId === label.id ? null : label.id)
-                }
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors border cursor-pointer",
-                  filters.labelId === label.id
-                    ? "opacity-100"
-                    : "opacity-70 hover:opacity-100"
-                )}
-                style={
-                  filters.labelId === label.id
-                    ? {
-                        backgroundColor: label.color + "30",
-                        borderColor: label.color + "80",
-                        color: label.color,
-                      }
-                    : {
-                        backgroundColor: "transparent",
-                        borderColor: label.color + "50",
-                        color: label.color,
-                      }
-                }
-              >
-                <span
-                  className="h-1.5 w-1.5 rounded-full shrink-0"
-                  style={{ backgroundColor: label.color }}
-                />
-                {label.name}
-              </button>
-            ))}
-          </>
-        )}
-
-        {/* Section filter (only if sections exist) */}
-        {sections.length > 0 && (
-          <>
-            <span className="h-4 w-px bg-border" />
-            <Select
-              value={filters.section}
-              onValueChange={(v) => setFilter("section", v)}
-            >
-              <SelectTrigger className="h-7 w-auto gap-1 text-xs px-2 border rounded-full">
-                <SelectValue placeholder="Section" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All sections</SelectItem>
-                {sections.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-                <SelectItem value="">Unsectioned</SelectItem>
-              </SelectContent>
-            </Select>
-          </>
-        )}
-
-        <span className="h-4 w-px bg-border" />
-
-        {/* Sort */}
+        {/* Sort button */}
         <Select
           value={`${filters.sortBy}:${filters.sortOrder}`}
           onValueChange={(v) => {
@@ -218,7 +130,7 @@ export function TodoFilters() {
             setFilter("sortOrder", sortOrder);
           }}
         >
-          <SelectTrigger className="h-7 w-auto gap-1 text-xs px-2 border rounded-full">
+          <SelectTrigger className="h-8 w-auto gap-1.5 text-xs px-3 border rounded-md">
             <ArrowUpDown className="h-3 w-3" />
             <SelectValue />
           </SelectTrigger>
@@ -227,28 +139,137 @@ export function TodoFilters() {
             <SelectItem value="created_at:asc">Oldest</SelectItem>
             <SelectItem value="due_date:asc">Due soonest</SelectItem>
             <SelectItem value="due_date:desc">Due latest</SelectItem>
-            <SelectItem value="priority:desc">Priority high</SelectItem>
-            <SelectItem value="priority:asc">Priority low</SelectItem>
+            <SelectItem value="priority:desc">Priority ↑</SelectItem>
+            <SelectItem value="priority:asc">Priority ↓</SelectItem>
           </SelectContent>
         </Select>
 
-        {/* Reset */}
+        {/* Reset — only when filters active */}
         {hasActiveFilters && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={resetFilters}
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Reset filters</TooltipContent>
-          </Tooltip>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1.5 text-xs text-muted-foreground"
+            onClick={resetFilters}
+          >
+            <RotateCcw className="h-3 w-3" />
+            Reset
+          </Button>
         )}
       </div>
+
+      {/* Filter Sheet */}
+      <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
+        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-2xl">
+          <SheetHeader className="pb-2">
+            <SheetTitle className="text-base">Filters</SheetTitle>
+          </SheetHeader>
+
+          <div className="space-y-5 pb-6">
+            {/* Status */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</p>
+              <div className="flex flex-wrap gap-2">
+                <FilterChip
+                  label="Active"
+                  isActive={filters.completed === "active"}
+                  onClick={() => setFilter("completed", filters.completed === "active" ? "all" : "active")}
+                />
+                <FilterChip
+                  label="Done"
+                  isActive={filters.completed === "completed"}
+                  onClick={() => setFilter("completed", filters.completed === "completed" ? "all" : "completed")}
+                />
+                <FilterChip
+                  label="All"
+                  isActive={filters.completed === "all"}
+                  onClick={() => setFilter("completed", "all")}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Priority */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Priority</p>
+              <div className="flex flex-wrap gap-2">
+                {(["high", "medium", "low"] as const).map((p) => (
+                  <FilterChip
+                    key={p}
+                    label={p.charAt(0).toUpperCase() + p.slice(1)}
+                    isActive={filters.priority === p}
+                    onClick={() => setFilter("priority", filters.priority === p ? "all" : p)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Assignee */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Assignee</p>
+              <div className="flex flex-wrap gap-2">
+                {(["Andrew", "Chrystalla", "Both", "Lulu"] as const).map((person) => (
+                  <FilterChip
+                    key={person}
+                    label={person}
+                    isActive={filters.assignedTo === person}
+                    onClick={() => setFilter("assignedTo", filters.assignedTo === person ? "all" : person)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Labels (if any) */}
+            {labels.length > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Labels</p>
+                  <div className="flex flex-wrap gap-2">
+                    {labels.map((label) => (
+                      <FilterChip
+                        key={label.id}
+                        label={label.name}
+                        isActive={filters.labelId === label.id}
+                        onClick={() => setFilter("labelId", filters.labelId === label.id ? null : label.id)}
+                        color={label.color}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Section (if any) */}
+            {sections.length > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Section</p>
+                  <div className="flex flex-wrap gap-2">
+                    <FilterChip
+                      label="All"
+                      isActive={filters.section === "all"}
+                      onClick={() => setFilter("section", "all")}
+                    />
+                    {sections.map((s) => (
+                      <FilterChip
+                        key={s}
+                        label={s}
+                        isActive={filters.section === s}
+                        onClick={() => setFilter("section", filters.section === s ? "all" : s)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

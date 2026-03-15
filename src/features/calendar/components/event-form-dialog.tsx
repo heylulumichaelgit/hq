@@ -109,8 +109,8 @@ export function EventFormDialog({ defaultDate, trigger }: EventFormDialogProps) 
     >
       <DialogTrigger asChild>
         {trigger ?? (
-          <Button className="min-h-[48px] gap-2">
-            <Plus className="h-5 w-5" />
+          <Button className="h-9 gap-2">
+            <Plus className="h-4 w-4" />
             <span>Add Event</span>
           </Button>
         )}
@@ -127,7 +127,7 @@ export function EventFormDialog({ defaultDate, trigger }: EventFormDialogProps) 
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               placeholder="e.g. Lulu's birthday party"
-              className="min-h-[48px]"
+              className="h-9"
             />
             {errors.title && (
               <p className="text-sm text-destructive">{errors.title}</p>
@@ -162,7 +162,7 @@ export function EventFormDialog({ defaultDate, trigger }: EventFormDialogProps) 
                 type="date"
                 value={form.start_date}
                 onChange={(e) => setForm((f) => ({ ...f, start_date: e.target.value }))}
-                className="min-h-[48px]"
+                className="h-9"
               />
             </div>
             {!form.all_day && (
@@ -173,7 +173,7 @@ export function EventFormDialog({ defaultDate, trigger }: EventFormDialogProps) 
                   type="time"
                   value={form.start_time}
                   onChange={(e) => setForm((f) => ({ ...f, start_time: e.target.value }))}
-                  className="min-h-[48px]"
+                  className="h-9"
                 />
               </div>
             )}
@@ -187,7 +187,7 @@ export function EventFormDialog({ defaultDate, trigger }: EventFormDialogProps) 
                 type="date"
                 value={form.end_date}
                 onChange={(e) => setForm((f) => ({ ...f, end_date: e.target.value }))}
-                className="min-h-[48px]"
+                className="h-9"
               />
             </div>
             {!form.all_day && (
@@ -198,7 +198,7 @@ export function EventFormDialog({ defaultDate, trigger }: EventFormDialogProps) 
                   type="time"
                   value={form.end_time}
                   onChange={(e) => setForm((f) => ({ ...f, end_time: e.target.value }))}
-                  className="min-h-[48px]"
+                  className="h-9"
                 />
               </div>
             )}
@@ -228,14 +228,14 @@ export function EventFormDialog({ defaultDate, trigger }: EventFormDialogProps) 
             <Button
               type="button"
               variant="outline"
-              className="min-h-[48px]"
+              className="h-9"
               onClick={() => setOpen(false)}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="min-h-[48px]"
+              className="h-9"
               disabled={createEvent.isPending}
             >
               {createEvent.isPending ? (

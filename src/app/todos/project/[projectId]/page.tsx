@@ -3,7 +3,6 @@
 import { use, useState } from "react";
 import { TodoList } from "@/features/todos/components/todo-list";
 import { TodoFilters } from "@/features/todos/components/todo-filters";
-import { TodoFormDialog } from "@/features/todos/components/todo-form-dialog";
 import { TodoBoard } from "@/features/todos/components/todo-board";
 import { useProjects } from "@/features/projects/queries";
 import { motion } from "framer-motion";
@@ -39,36 +38,28 @@ export default function ProjectPage({ params }: ProjectPageProps) {
               />
             </div>
           )}
-          <div>
-            <h1 className="text-2xl font-bold">
-              {project?.name ?? "Project"}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Project tasks
-            </p>
-          </div>
+          <h1 className="text-2xl font-bold">
+            {project?.name ?? "Project"}
+          </h1>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 rounded-lg border p-0.5">
-            <Button
-              variant={view === "list" ? "secondary" : "ghost"}
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => setView("list")}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={view === "board" ? "secondary" : "ghost"}
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => setView("board")}
-            >
-              <LayoutDashboard className="h-4 w-4" />
-            </Button>
-          </div>
-          <TodoFormDialog defaultProjectId={projectId} />
+        <div className="flex items-center gap-1 rounded-lg border p-0.5">
+          <Button
+            variant={view === "list" ? "secondary" : "ghost"}
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setView("list")}
+          >
+            <List className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={view === "board" ? "secondary" : "ghost"}
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setView("board")}
+          >
+            <LayoutDashboard className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 

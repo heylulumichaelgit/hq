@@ -34,7 +34,8 @@ export interface FamilyEvent {
 
 export interface ConnectionStatus {
   connected: boolean;
-  googleEmail: string | null;
+  googleEmails: string[];
+  googleEmail: string | null; // backward-compat
 }
 
 export interface CalendarSelection {
@@ -171,9 +172,11 @@ export function useDeleteFamilyEvent() {
 export function useDisconnectGoogle() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (googleEmail?: string) => {
       const res = await fetch("/api/calendar/oauth/disconnect", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(googleEmail ? { googleEmail } : {}),
       });
       if (!res.ok) throw new Error("Failed to disconnect");
     },

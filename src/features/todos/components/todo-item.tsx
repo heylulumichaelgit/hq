@@ -8,29 +8,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useToggleTodo, useDeleteTodo, getSubtaskProgress } from "../queries";
 import { TodoFormDialog } from "./todo-form-dialog";
-import { LabelPicker } from "./label-picker";
-import { CommentPanel } from "./comment-panel";
 import type { Todo } from "@/lib/supabase/types";
 import {
   MoreVertical,
   Pencil,
   Trash2,
   Calendar,
-  Clock,
-  User,
   Plus,
   ListTree,
   ChevronRight,
   CheckCheck,
   Repeat2,
-  MessageCircle,
 } from "lucide-react";
 import {
   format,
@@ -66,6 +56,29 @@ const priorityColors = {
     ring: "ring-muted-foreground/20",
   },
 };
+
+const assigneeAvatarColors: Record<string, { bg: string; text: string }> = {
+  Andrew: { bg: "bg-blue-100 dark:bg-blue-900/40", text: "text-blue-700 dark:text-blue-300" },
+  Chrystalla: { bg: "bg-purple-100 dark:bg-purple-900/40", text: "text-purple-700 dark:text-purple-300" },
+  Both: { bg: "bg-green-100 dark:bg-green-900/40", text: "text-green-700 dark:text-green-300" },
+  Lulu: { bg: "bg-pink-100 dark:bg-pink-900/40", text: "text-pink-700 dark:text-pink-300" },
+};
+
+function AssigneeAvatar({ assignedTo }: { assignedTo: string }) {
+  const colors = assigneeAvatarColors[assignedTo] ?? { bg: "bg-muted", text: "text-muted-foreground" };
+  const initial = assignedTo === "Both" ? "Bo" : assignedTo.charAt(0);
+  return (
+    <span
+      className={cn(
+        "inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold shrink-0",
+        colors.bg,
+        colors.text
+      )}
+    >
+      {initial}
+    </span>
+  );
+}
 
 function CircularCheckbox({
   checked,
@@ -157,7 +170,6 @@ export function TodoItem({ todo, allTodos, depth = 0, todoLabelsMap, commentCoun
   const [showSubtaskAdd, setShowSubtaskAdd] = useState(false);
   const [subtasksOpen, setSubtasksOpen] = useState(true);
   const [showCascadePrompt, setShowCascadePrompt] = useState(false);
-  const [showComments, setShowComments] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
 
   const todoLabels = todoLabelsMap.get(todo.id) ?? [];
@@ -253,12 +265,6 @@ export function TodoItem({ todo, allTodos, depth = 0, todoLabelsMap, commentCoun
             </button>
           </div>
 
-          {todo.description && !todo.is_completed && (
-            <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
-              {todo.description}
-            </p>
-          )}
-
           <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
             {dueDateInfo && (
               <span
@@ -272,21 +278,7 @@ export function TodoItem({ todo, allTodos, depth = 0, todoLabelsMap, commentCoun
               </span>
             )}
 
-            {todo.duration_minutes && (
-              <span className="flex items-center gap-1 text-muted-foreground">
-                <Clock className="h-3 w-3" />
-                {todo.duration_minutes < 60
-                  ? `${todo.duration_minutes}m`
-                  : todo.duration_minutes % 60 === 0
-                    ? `${todo.duration_minutes / 60}h`
-                    : `${Math.floor(todo.duration_minutes / 60)}h ${todo.duration_minutes % 60}m`}
-              </span>
-            )}
-
-            <span className="flex items-center gap-1 text-muted-foreground">
-              <User className="h-3 w-3" />
-              {todo.assigned_to}
-            </span>
+            <AssigneeAvatar assignedTo={todo.assigned_to} />
 
             {todo.section && (
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
@@ -294,7 +286,7 @@ export function TodoItem({ todo, allTodos, depth = 0, todoLabelsMap, commentCoun
               </Badge>
             )}
 
-            {todoLabels.map((label) => (
+            {todoLabels.slice(0, 2).map((label) => (
               <span
                 key={label.id}
                 className="inline-flex items-center gap-1 rounded-full px-2 py-0 text-[10px] font-medium border"
@@ -307,11 +299,13 @@ export function TodoItem({ todo, allTodos, depth = 0, todoLabelsMap, commentCoun
                 {label.name}
               </span>
             ))}
+            {todoLabels.length > 2 && (
+              <span className="text-[10px] text-muted-foreground">+{todoLabels.length - 2}</span>
+            )}
 
             {todo.recurrence_rule && (
-              <span className="flex items-center gap-1 text-primary/70">
+              <span className="flex items-center text-primary/70" title={getRecurrenceLabel(todo.recurrence_rule)}>
                 <Repeat2 className="h-3 w-3" />
-                {getRecurrenceLabel(todo.recurrence_rule)}
               </span>
             )}
 
@@ -335,50 +329,23 @@ export function TodoItem({ todo, allTodos, depth = 0, todoLabelsMap, commentCoun
         </div>
 
         <div className="flex items-center shrink-0">
-          {/* Comment badge */}
-          <button
-            onClick={() => setShowComments((v) => !v)}
-            className={cn(
-              "flex items-center gap-1 text-xs rounded px-1.5 py-1 transition-colors",
-              commentCount > 0
-                ? "text-muted-foreground hover:text-foreground"
-                : "opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <MessageCircle className="h-3.5 w-3.5" />
-            {commentCount > 0 && <span>{commentCount}</span>}
-          </button>
-
-          {/* Label picker */}
-          <LabelPicker todoId={todo.id} currentLabels={todoLabels} />
-
-          {depth < 2 && !todo.is_completed && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-                  onClick={() => setShowSubtaskAdd(!showSubtaskAdd)}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Add subtask</TooltipContent>
-            </Tooltip>
-          )}
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="min-h-[48px] min-w-[48px] shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                className="h-9 w-9 shrink-0 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 transition-opacity"
               >
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {depth < 2 && !todo.is_completed && (
+                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setShowSubtaskAdd(true); }}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add subtask
+                </DropdownMenuItem>
+              )}
               <TodoFormDialog
                 todo={todo}
                 trigger={
@@ -434,11 +401,6 @@ export function TodoItem({ todo, allTodos, depth = 0, todoLabelsMap, commentCoun
             </Button>
           </motion.div>
         )}
-      </AnimatePresence>
-
-      {/* Comment panel */}
-      <AnimatePresence>
-        {showComments && <CommentPanel todoId={todo.id} />}
       </AnimatePresence>
 
       {/* Subtask inline add */}

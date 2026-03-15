@@ -2,7 +2,7 @@
 
 import { useConnectionStatus, useDisconnectGoogle } from "../queries";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Loader2, Unlink } from "lucide-react";
+import { CalendarDays, Loader2, Plus, Unlink } from "lucide-react";
 
 export function GoogleConnectBanner() {
   const { data: status, isLoading } = useConnectionStatus();
@@ -10,44 +10,60 @@ export function GoogleConnectBanner() {
 
   if (isLoading) return null;
 
-  if (status?.connected) {
-    return (
-      <div className="flex items-center justify-between rounded-lg border bg-muted/40 px-4 py-2 text-sm">
-        <span className="text-muted-foreground">
-          Connected as <span className="font-medium text-foreground">{status.googleEmail}</span>
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-1.5 text-muted-foreground"
-          disabled={disconnect.isPending}
-          onClick={() => disconnect.mutate()}
-        >
-          {disconnect.isPending ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Unlink className="h-3.5 w-3.5" />
-          )}
-          Disconnect
-        </Button>
-      </div>
-    );
-  }
+  const emails = status?.googleEmails ?? [];
 
   return (
-    <div className="flex items-center justify-between rounded-lg border border-dashed bg-muted/20 px-4 py-3">
-      <div className="flex items-center gap-3">
-        <CalendarDays className="h-5 w-5 text-muted-foreground" />
-        <div>
-          <p className="text-sm font-medium">Connect Google Calendar</p>
-          <p className="text-xs text-muted-foreground">
-            See your work events alongside family events
-          </p>
+    <div className="rounded-lg border bg-muted/30 px-4 py-3 space-y-2">
+      {emails.length === 0 ? (
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
+            <div>
+              <p className="text-sm font-medium">Connect Google Calendar</p>
+              <p className="text-xs text-muted-foreground">
+                See your events alongside family events
+              </p>
+            </div>
+          </div>
+          <a href="/api/calendar/oauth/connect">
+            <Button size="sm" className="h-8 text-xs">Connect</Button>
+          </a>
         </div>
-      </div>
-      <a href="/api/calendar/oauth/connect">
-        <Button size="sm">Connect</Button>
-      </a>
+      ) : (
+        <>
+          {emails.map((email) => (
+            <div key={email} className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="h-2 w-2 rounded-full bg-green-500 shrink-0" />
+                <span className="text-sm truncate">{email}</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1.5 text-xs text-muted-foreground shrink-0"
+                disabled={disconnect.isPending}
+                onClick={() => disconnect.mutate(email)}
+              >
+                {disconnect.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Unlink className="h-3 w-3" />
+                )}
+                Remove
+              </Button>
+            </div>
+          ))}
+
+          <div className="pt-0.5">
+            <a href="/api/calendar/oauth/connect">
+              <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs w-full">
+                <Plus className="h-3 w-3" />
+                Connect another Google account
+              </Button>
+            </a>
+          </div>
+        </>
+      )}
     </div>
   );
 }

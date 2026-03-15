@@ -70,7 +70,7 @@ export default function ForgotPasswordPage() {
                   inbox and click the link to set a new password.
                 </p>
                 <Link href="/login">
-                  <Button variant="outline" className="w-full min-h-[48px]">
+                  <Button variant="outline" className="w-full h-9">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to Sign In
                   </Button>
@@ -87,7 +87,7 @@ export default function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="min-h-[48px]"
+                    className="h-9"
                   />
                 </div>
                 {error && (
@@ -95,7 +95,7 @@ export default function ForgotPasswordPage() {
                 )}
                 <Button
                   type="submit"
-                  className="w-full min-h-[48px]"
+                  className="w-full h-9"
                   disabled={loading}
                 >
                   {loading ? (
@@ -108,7 +108,7 @@ export default function ForgotPasswordPage() {
                   <Button
                     type="button"
                     variant="ghost"
-                    className="w-full min-h-[48px]"
+                    className="w-full h-9"
                   >
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to Sign In

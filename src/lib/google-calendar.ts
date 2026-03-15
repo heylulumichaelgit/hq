@@ -19,7 +19,9 @@ export function getAuthUrl(state: string): string {
   return oauth2Client.generateAuthUrl({
     access_type: "offline",
     scope: SCOPES,
-    prompt: "consent", // force refresh_token on every connect
+    // "select_account" forces Google's account picker so you can choose WHICH
+    // Google account to connect. "consent" ensures a refresh_token is returned.
+    prompt: "select_account consent",
     state,
   });
 }

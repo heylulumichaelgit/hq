@@ -5,8 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { CalendarView } from "@/features/calendar/components/calendar-view";
 import { EventFormDialog } from "@/features/calendar/components/event-form-dialog";
-import { GoogleConnectBanner } from "@/features/calendar/components/google-connect-banner";
 import { CalendarSettingsSheet } from "@/features/calendar/components/calendar-settings-sheet";
+import { Plus } from "lucide-react";
 
 function OAuthRedirectHandler() {
   const searchParams = useSearchParams();
@@ -23,26 +23,26 @@ export default function CalendarPage() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex flex-col h-full gap-4"
+      className="flex flex-col h-full gap-3"
     >
       <Suspense>
         <OAuthRedirectHandler />
       </Suspense>
 
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Family Calendar</h1>
-          <p className="text-sm text-muted-foreground">
-            Shared view for the Michael family
-          </p>
-        </div>
+        <h1 className="text-2xl font-bold">Calendar</h1>
         <div className="flex items-center gap-2">
           <CalendarSettingsSheet />
-          <EventFormDialog />
+          <EventFormDialog
+            trigger={
+              <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Add Event</span>
+              </button>
+            }
+          />
         </div>
       </div>
-
-      <GoogleConnectBanner />
 
       <div className="flex-1 min-h-0">
         <CalendarView />

@@ -167,7 +167,7 @@ export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection
     >
       <DialogTrigger asChild>
         {trigger ?? (
-          <Button className="min-h-[48px] gap-2">
+          <Button className="h-9 gap-2">
             <Plus className="h-5 w-5" />
             <span>Add Todo</span>
           </Button>
@@ -187,7 +187,7 @@ export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection
                 setForm((f) => ({ ...f, title: e.target.value }))
               }
               placeholder="What needs to be done?"
-              className="min-h-[48px]"
+              className="h-9"
             />
             {errors.title && (
               <p className="text-sm text-destructive">{errors.title}</p>
@@ -229,7 +229,7 @@ export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection
                 onChange={(e) =>
                   setForm((f) => ({ ...f, due_date: e.target.value }))
                 }
-                className="min-h-[48px]"
+                className="h-9"
               />
             </div>
 
@@ -244,7 +244,7 @@ export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection
                   }))
                 }
               >
-                <SelectTrigger className="min-h-[48px]">
+                <SelectTrigger className="h-9">
                   <Repeat2 className="h-4 w-4 mr-2 text-muted-foreground" />
                   <SelectValue placeholder="Never" />
                 </SelectTrigger>
@@ -272,7 +272,7 @@ export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection
                   }))
                 }
               >
-                <SelectTrigger className="min-h-[48px]">
+                <SelectTrigger className="h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -294,7 +294,7 @@ export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection
                   }))
                 }
               >
-                <SelectTrigger className="min-h-[48px]">
+                <SelectTrigger className="h-9">
                   <SelectValue placeholder="No estimate" />
                 </SelectTrigger>
                 <SelectContent>
@@ -324,7 +324,7 @@ export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection
                   }))
                 }
               >
-                <SelectTrigger className="min-h-[48px]">
+                <SelectTrigger className="h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -345,7 +345,7 @@ export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection
                   setForm((f) => ({ ...f, section: e.target.value }))
                 }
                 placeholder="e.g. House, Admin, Kids"
-                className="min-h-[48px]"
+                className="h-9"
                 list="section-suggestions"
               />
               <datalist id="section-suggestions">
@@ -368,7 +368,7 @@ export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection
                   }))
                 }
               >
-                <SelectTrigger className="min-h-[48px]">
+                <SelectTrigger className="h-9">
                   <SelectValue placeholder="Inbox" />
                 </SelectTrigger>
                 <SelectContent>
@@ -397,14 +397,14 @@ export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection
             <Button
               type="button"
               variant="outline"
-              className="min-h-[48px]"
+              className="h-9"
               onClick={() => setOpen(false)}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="min-h-[48px]"
+              className="h-9"
               disabled={isPending}
             >
               {isPending ? (

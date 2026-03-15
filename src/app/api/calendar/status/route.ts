@@ -11,14 +11,17 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: token } = await supabase
+  const { data: tokens } = await supabase
     .from("google_calendar_tokens")
     .select("google_email")
-    .eq("user_id", user.id)
-    .maybeSingle();
+    .eq("user_id", user.id);
+
+  const googleEmails = (tokens ?? []).map((t) => t.google_email as string);
 
   return NextResponse.json({
-    connected: !!token,
-    googleEmail: token?.google_email ?? null,
+    connected: googleEmails.length > 0,
+    googleEmails,
+    // backward-compat field
+    googleEmail: googleEmails[0] ?? null,
   });
 }
