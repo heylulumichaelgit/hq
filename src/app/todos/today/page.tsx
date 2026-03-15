@@ -152,10 +152,10 @@ export default function TodayPage() {
       {/* Overdue section */}
       {overdue.length > 0 && (
         <div className="space-y-1">
-          <div className="flex items-center gap-2 px-1 py-2 text-xs font-semibold uppercase tracking-wider text-destructive">
+          <div className="flex items-center gap-2 px-1 py-2 text-xs font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-400">
             <AlertTriangle className="h-3.5 w-3.5" />
             Overdue
-            <span className="font-normal text-destructive/70">({overdue.length})</span>
+            <span className="font-normal opacity-60">({overdue.length})</span>
           </div>
           <AnimatePresence mode="popLayout">
             {overdue.map((todo) => (

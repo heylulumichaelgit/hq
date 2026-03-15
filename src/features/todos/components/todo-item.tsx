@@ -57,25 +57,33 @@ const priorityColors = {
   },
 };
 
-const assigneeAvatarColors: Record<string, { bg: string; text: string }> = {
+const personColors: Record<string, { bg: string; text: string }> = {
   Andrew: { bg: "bg-stone-200 dark:bg-stone-700/50", text: "text-stone-700 dark:text-stone-300" },
   Chrystalla: { bg: "bg-amber-100 dark:bg-amber-900/40", text: "text-amber-800 dark:text-amber-300" },
-  Both: { bg: "bg-muted", text: "text-muted-foreground" },
   Lulu: { bg: "bg-rose-100 dark:bg-rose-900/30", text: "text-rose-700 dark:text-rose-300" },
 };
 
 function AssigneeAvatar({ assignedTo }: { assignedTo: string }) {
-  const colors = assigneeAvatarColors[assignedTo] ?? { bg: "bg-muted", text: "text-muted-foreground" };
-  const initial = assignedTo === "Both" ? "Bo" : assignedTo.charAt(0);
+  const people = assignedTo === "Both"
+    ? ["Andrew", "Chrystalla"]
+    : assignedTo.split(",").map((p) => p.trim()).filter(Boolean);
   return (
-    <span
-      className={cn(
-        "inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold shrink-0",
-        colors.bg,
-        colors.text
-      )}
-    >
-      {initial}
+    <span className="inline-flex items-center gap-0.5 shrink-0">
+      {people.map((person) => {
+        const colors = personColors[person] ?? { bg: "bg-muted", text: "text-muted-foreground" };
+        return (
+          <span
+            key={person}
+            className={cn(
+              "inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold",
+              colors.bg,
+              colors.text
+            )}
+          >
+            {person.charAt(0)}
+          </span>
+        );
+      })}
     </span>
   );
 }
@@ -227,7 +235,7 @@ export function TodoItem({ todo, allTodos, depth = 0, todoLabelsMap, commentCoun
         layout
         initial={{ opacity: 0, y: 8 }}
         animate={{
-          opacity: todo.is_completed ? 0.5 : 1,
+          opacity: todo.is_completed ? 0.6 : 1,
           y: 0,
         }}
         exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
@@ -236,7 +244,7 @@ export function TodoItem({ todo, allTodos, depth = 0, todoLabelsMap, commentCoun
           "group flex items-start gap-3 rounded-lg border px-4 py-3 transition-colors hover:bg-accent/50",
           depth === 1 && "ml-8 border-dashed",
           depth === 2 && "ml-16 border-dashed border-muted-foreground/30",
-          todo.is_completed && "bg-muted/30"
+          todo.is_completed && "bg-muted/20 border-muted/50"
         )}
       >
         <CircularCheckbox

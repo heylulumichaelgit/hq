@@ -15,9 +15,9 @@ import {
 } from "@/components/ui/collapsible";
 import type { Todo } from "@/lib/supabase/types";
 
-type PersonFilter = "All" | "Andrew" | "Chrystalla" | "Lulu" | "Both";
+type PersonFilter = "All" | "Andrew" | "Chrystalla" | "Lulu";
 
-const PERSON_FILTERS: PersonFilter[] = ["All", "Andrew", "Chrystalla", "Lulu", "Both"];
+const PERSON_FILTERS: PersonFilter[] = ["All", "Andrew", "Chrystalla", "Lulu"];
 
 function getWeekLabel(weekStart: Date, now: Date): string {
   if (isSameWeek(weekStart, now, { weekStartsOn: 1 })) {
@@ -45,7 +45,12 @@ export default function CompletedPage() {
     const filtered =
       activeFilter === "All"
         ? completed
-        : completed.filter((t) => t.assigned_to === activeFilter);
+        : completed.filter((t) => {
+            const people = t.assigned_to === "Both"
+              ? ["Andrew", "Chrystalla"]
+              : t.assigned_to.split(",").map((p) => p.trim());
+            return people.includes(activeFilter);
+          });
 
     // Group by week start (Monday)
     const weekMap = new Map<number, Todo[]>();
@@ -87,8 +92,8 @@ export default function CompletedPage() {
     >
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800">
-          <Archive className="h-5 w-5 text-zinc-500" />
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+          <Archive className="h-5 w-5 text-muted-foreground" />
         </div>
         <div>
           <h1 className="text-2xl font-bold">Completed</h1>
@@ -129,9 +134,14 @@ export default function CompletedPage() {
       {/* Week groups */}
       {weekGroups.map(({ weekStart, weekTodos }) => {
         const label = getWeekLabel(weekStart, now);
-        const personBreakdown = (["Andrew", "Chrystalla", "Lulu", "Both"] as const)
+        const personBreakdown = (["Andrew", "Chrystalla", "Lulu"] as const)
           .map((p) => {
-            const n = weekTodos.filter((t) => t.assigned_to === p).length;
+            const n = weekTodos.filter((t) => {
+              const people = t.assigned_to === "Both"
+                ? ["Andrew", "Chrystalla"]
+                : t.assigned_to.split(",").map((s) => s.trim());
+              return people.includes(p);
+            }).length;
             return n > 0 ? `${p} ${n}` : null;
           })
           .filter(Boolean)

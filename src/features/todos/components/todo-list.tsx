@@ -36,7 +36,7 @@ function SectionHeader({
   count: number;
   isCollapsed: boolean;
   onToggle: () => void;
-  variant?: "default" | "overdue";
+  variant?: "default" | "overdue" | "unsectioned";
 }) {
   return (
     <CollapsibleTrigger
@@ -45,7 +45,9 @@ function SectionHeader({
         "flex w-full items-center gap-2 px-1 py-2 text-xs font-semibold uppercase tracking-wider",
         "hover:bg-accent/50 rounded transition-colors cursor-pointer",
         variant === "overdue"
-          ? "text-destructive"
+          ? "text-amber-800 dark:text-amber-400"
+          : variant === "unsectioned"
+          ? "text-muted-foreground/50"
           : "text-muted-foreground"
       )}
     >
@@ -56,8 +58,8 @@ function SectionHeader({
         <ChevronDown className="h-3.5 w-3.5" />
       </motion.div>
       {variant === "overdue" && <AlertTriangle className="h-3.5 w-3.5" />}
-      <span>{title}</span>
-      <span className="text-muted-foreground font-normal">({count})</span>
+      <span className={variant === "unsectioned" ? "tracking-[0.2em]" : ""}>{title}</span>
+      <span className="font-normal opacity-60">({count})</span>
     </CollapsibleTrigger>
   );
 }
@@ -104,7 +106,12 @@ export function TodoList({ projectId }: TodoListProps) {
 
     // Filter by assigned_to
     if (filters.assignedTo !== "all") {
-      result = result.filter((t) => t.assigned_to === filters.assignedTo);
+      result = result.filter((t) => {
+        const people = t.assigned_to === "Both"
+          ? ["Andrew", "Chrystalla"]
+          : t.assigned_to.split(",").map((p) => p.trim());
+        return people.includes(filters.assignedTo);
+      });
     }
 
     // Filter by priority
@@ -300,10 +307,11 @@ export function TodoList({ projectId }: TodoListProps) {
         return (
           <Collapsible key={sectionKey} open={!isCollapsed}>
             <SectionHeader
-              title={section || "Unsectioned"}
+              title={section || "—"}
               count={sectionTodos.length}
               isCollapsed={isCollapsed}
               onToggle={() => toggleSection(sectionKey)}
+              variant={section ? "default" : "unsectioned"}
             />
             <CollapsibleContent>
               <div className="space-y-1">
