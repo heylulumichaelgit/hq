@@ -28,7 +28,7 @@ import { PushToggle } from "@/features/notifications/push-toggle";
 const navItems = [
   { href: "/todos", label: "Todos", icon: CheckSquare, ready: true },
   { href: "/grocery", label: "Grocery List", icon: ShoppingCart, ready: false },
-  { href: "/calendar", label: "Calendar", icon: Calendar, ready: false },
+  { href: "/calendar", label: "Calendar", icon: Calendar, ready: true },
   { href: "/bookings", label: "Bookings", icon: Plane, ready: false },
 ];
 
