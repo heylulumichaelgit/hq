@@ -92,8 +92,8 @@ export default function TodayPage() {
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
-            <Sun className="h-5 w-5 text-amber-500" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+            <Sun className="h-5 w-5 text-muted-foreground" />
           </div>
           <div>
             <h1 className="text-2xl font-bold">Today</h1>
@@ -127,7 +127,7 @@ export default function TodayPage() {
               animate={{ rotate: [0, -10, 10, -10, 0] }}
               transition={{ delay: 0.2, duration: 0.5 }}
             >
-              <CheckCircle2 className="h-16 w-16 text-green-500" />
+              <CheckCircle2 className="h-16 w-16 text-primary" />
             </motion.div>
             <p className="mt-4 text-xl font-bold">Family Zero! 🎉</p>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -139,7 +139,7 @@ export default function TodayPage() {
 
       {!allDone && totalCount === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Sun className="h-12 w-12 text-amber-400/50" />
+          <Sun className="h-12 w-12 text-muted-foreground/30" />
           <p className="mt-4 text-lg font-medium text-muted-foreground">
             Nothing due today
           </p>

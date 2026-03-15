@@ -83,7 +83,7 @@ export default function ResetPasswordPage() {
           <CardContent>
             {success ? (
               <div className="space-y-4 text-center">
-                <CheckCircle2 className="mx-auto h-12 w-12 text-green-500" />
+                <CheckCircle2 className="mx-auto h-12 w-12 text-primary" />
                 <p className="text-sm text-muted-foreground">
                   Redirecting you to the app...
                 </p>

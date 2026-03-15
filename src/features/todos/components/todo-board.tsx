@@ -29,14 +29,14 @@ import { Button } from "@/components/ui/button";
 // ─── Priority colours ────────────────────────────────────────────────────────
 
 const priorityBorder: Record<string, string> = {
-  high: "border-l-red-500",
-  medium: "border-l-orange-400",
+  high: "border-l-destructive",
+  medium: "border-l-amber-700 dark:border-l-amber-500",
   low: "border-l-muted-foreground/30",
 };
 
 const priorityDot: Record<string, string> = {
-  high: "bg-red-500",
-  medium: "bg-orange-400",
+  high: "bg-destructive",
+  medium: "bg-amber-700 dark:bg-amber-500",
   low: "bg-muted-foreground/30",
 };
 
@@ -44,7 +44,7 @@ const priorityDot: Record<string, string> = {
 
 function formatCardDate(dateStr: string): { label: string; className: string } {
   const date = startOfDay(new Date(dateStr));
-  if (isToday(date)) return { label: "Today", className: "text-blue-500" };
+  if (isToday(date)) return { label: "Today", className: "text-primary" };
   if (isPast(date)) return { label: format(date, "MMM d"), className: "text-destructive" };
   return { label: format(date, "MMM d"), className: "text-muted-foreground" };
 }

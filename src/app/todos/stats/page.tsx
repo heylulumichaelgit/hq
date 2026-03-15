@@ -13,9 +13,9 @@ const PEOPLE = ["Andrew", "Chrystalla", "Lulu"] as const;
 type Person = (typeof PEOPLE)[number];
 
 const PERSON_COLORS: Record<Person, string> = {
-  Andrew: "#3b82f6",
-  Chrystalla: "#a855f7",
-  Lulu: "#22c55e",
+  Andrew: "#C4956A",
+  Chrystalla: "#8B7D6B",
+  Lulu: "#B5A8A0",
 };
 
 const RANK_BADGE: Record<number, string> = {
@@ -110,7 +110,7 @@ export default function StatsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-green-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -124,8 +124,8 @@ export default function StatsPage() {
         transition={{ duration: 0.3 }}
         className="flex items-center gap-3 mb-2"
       >
-        <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
-          <BarChart2 className="w-5 h-5 text-green-600 dark:text-green-400" />
+        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+          <BarChart2 className="w-5 h-5 text-muted-foreground" />
         </div>
         <h1 className="text-2xl font-bold tracking-tight">Stats</h1>
       </motion.div>
@@ -289,7 +289,7 @@ export default function StatsPage() {
                 <span className="text-2xl font-bold tabular-nums">
                   {thisWeek % 1 === 0 ? thisWeek : thisWeek.toFixed(1)}
                 </span>
-                <div className={`flex items-center gap-1 text-xs font-medium ${isUp ? "text-green-500" : "text-red-400"}`}>
+                <div className={`flex items-center gap-1 text-xs font-medium ${isUp ? "text-primary" : "text-destructive"}`}>
                   {isUp ? (
                     <TrendingUp className="w-3.5 h-3.5" />
                   ) : (

@@ -69,7 +69,7 @@ function ConnectSection() {
           {emails.map((email) => (
             <div key={email} className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className="h-2 w-2 rounded-full bg-green-500 shrink-0" />
+                <span className="h-2 w-2 rounded-full bg-primary/70 shrink-0" />
                 <span className="text-xs truncate">{email}</span>
               </div>
               <Button

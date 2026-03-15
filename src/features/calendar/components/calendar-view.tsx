@@ -55,7 +55,7 @@ function toDisplayFamilyEvent(e: FamilyEvent): DisplayEvent {
     start: parseISO(e.start_at),
     end: parseISO(e.end_at),
     allDay: e.all_day,
-    color: "#22c55e",
+    color: "#8FA48A",
     source: "family",
     familyEventId: e.id,
   };

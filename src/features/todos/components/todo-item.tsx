@@ -38,16 +38,16 @@ import { TodoDetailSheet } from "./todo-detail-sheet";
 
 const priorityColors = {
   high: {
-    border: "border-red-500",
-    fill: "bg-red-500",
-    text: "text-red-500",
-    ring: "ring-red-500/30",
+    border: "border-destructive",
+    fill: "bg-destructive",
+    text: "text-destructive",
+    ring: "ring-destructive/30",
   },
   medium: {
-    border: "border-orange-400",
-    fill: "bg-orange-400",
-    text: "text-orange-400",
-    ring: "ring-orange-400/30",
+    border: "border-amber-700 dark:border-amber-500",
+    fill: "bg-amber-700 dark:bg-amber-500",
+    text: "text-amber-700 dark:text-amber-400",
+    ring: "ring-amber-700/20",
   },
   low: {
     border: "border-muted-foreground/40",
@@ -58,10 +58,10 @@ const priorityColors = {
 };
 
 const assigneeAvatarColors: Record<string, { bg: string; text: string }> = {
-  Andrew: { bg: "bg-blue-100 dark:bg-blue-900/40", text: "text-blue-700 dark:text-blue-300" },
-  Chrystalla: { bg: "bg-purple-100 dark:bg-purple-900/40", text: "text-purple-700 dark:text-purple-300" },
-  Both: { bg: "bg-green-100 dark:bg-green-900/40", text: "text-green-700 dark:text-green-300" },
-  Lulu: { bg: "bg-pink-100 dark:bg-pink-900/40", text: "text-pink-700 dark:text-pink-300" },
+  Andrew: { bg: "bg-stone-200 dark:bg-stone-700/50", text: "text-stone-700 dark:text-stone-300" },
+  Chrystalla: { bg: "bg-amber-100 dark:bg-amber-900/40", text: "text-amber-800 dark:text-amber-300" },
+  Both: { bg: "bg-muted", text: "text-muted-foreground" },
+  Lulu: { bg: "bg-rose-100 dark:bg-rose-900/30", text: "text-rose-700 dark:text-rose-300" },
 };
 
 function AssigneeAvatar({ assignedTo }: { assignedTo: string }) {
@@ -141,10 +141,10 @@ function formatDueDate(dateStr: string): {
   const today = startOfDay(new Date());
 
   if (isToday(date)) {
-    return { label: "Today", className: "text-blue-500 font-medium" };
+    return { label: "Today", className: "text-primary font-medium" };
   }
   if (isTomorrow(date)) {
-    return { label: "Tomorrow", className: "text-orange-500 font-medium" };
+    return { label: "Tomorrow", className: "text-foreground/60 font-medium" };
   }
   if (isPast(date) && !isToday(date)) {
     return {

@@ -89,8 +89,8 @@ export default function UpcomingPage() {
     >
       {/* Page header */}
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
-          <CalendarDays className="h-5 w-5 text-blue-500" />
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+          <CalendarDays className="h-5 w-5 text-muted-foreground" />
         </div>
         <div>
           <h1 className="text-2xl font-bold">Upcoming</h1>
@@ -101,8 +101,8 @@ export default function UpcomingPage() {
       {/* Empty state */}
       {totalCount === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100/60 dark:bg-blue-900/20">
-            <CalendarDays className="h-8 w-8 text-blue-400/60" />
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted/60">
+            <CalendarDays className="h-8 w-8 text-muted-foreground/40" />
           </div>
           <p className="mt-4 text-lg font-medium text-muted-foreground">
             Nothing scheduled
@@ -142,7 +142,7 @@ export default function UpcomingPage() {
                 className={cn(
                   "font-semibold",
                   isToday(day)
-                    ? "text-blue-500 dark:text-blue-400"
+                    ? "text-primary"
                     : "text-muted-foreground"
                 )}
               >

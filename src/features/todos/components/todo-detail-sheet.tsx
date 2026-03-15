@@ -66,8 +66,8 @@ const ASSIGNED_TO_OPTIONS: AssignedTo[] = [
 const PRIORITY_OPTIONS: Priority[] = ["high", "medium", "low"];
 
 const priorityColors: Record<Priority, { dot: string; label: string }> = {
-  high: { dot: "bg-red-500", label: "text-red-500" },
-  medium: { dot: "bg-orange-400", label: "text-orange-400" },
+  high: { dot: "bg-destructive", label: "text-destructive" },
+  medium: { dot: "bg-amber-700 dark:bg-amber-500", label: "text-amber-700 dark:text-amber-400" },
   low: { dot: "bg-muted-foreground/40", label: "text-muted-foreground" },
 };
 
@@ -76,24 +76,24 @@ const assigneeColors: Record<
   { bg: string; text: string; ring: string }
 > = {
   Andrew: {
-    bg: "bg-blue-100 dark:bg-blue-900/40",
-    text: "text-blue-700 dark:text-blue-300",
-    ring: "ring-blue-300",
+    bg: "bg-stone-200 dark:bg-stone-700/50",
+    text: "text-stone-700 dark:text-stone-300",
+    ring: "ring-stone-300 dark:ring-stone-600",
   },
   Chrystalla: {
-    bg: "bg-purple-100 dark:bg-purple-900/40",
-    text: "text-purple-700 dark:text-purple-300",
-    ring: "ring-purple-300",
+    bg: "bg-amber-100 dark:bg-amber-900/40",
+    text: "text-amber-800 dark:text-amber-300",
+    ring: "ring-amber-300 dark:ring-amber-700",
   },
   Both: {
-    bg: "bg-green-100 dark:bg-green-900/40",
-    text: "text-green-700 dark:text-green-300",
-    ring: "ring-green-300",
+    bg: "bg-muted",
+    text: "text-muted-foreground",
+    ring: "ring-border",
   },
   Lulu: {
-    bg: "bg-pink-100 dark:bg-pink-900/40",
-    text: "text-pink-700 dark:text-pink-300",
-    ring: "ring-pink-300",
+    bg: "bg-rose-100 dark:bg-rose-900/30",
+    text: "text-rose-700 dark:text-rose-300",
+    ring: "ring-rose-200 dark:ring-rose-700",
   },
 };
 
@@ -139,15 +139,15 @@ function SubtaskCheckbox({
 }) {
   const borderColor =
     priority === "high"
-      ? "border-red-500"
+      ? "border-destructive"
       : priority === "medium"
-        ? "border-orange-400"
+        ? "border-amber-700 dark:border-amber-500"
         : "border-muted-foreground/40";
   const fillColor =
     priority === "high"
-      ? "bg-red-500"
+      ? "bg-destructive"
       : priority === "medium"
-        ? "bg-orange-400"
+        ? "bg-amber-700 dark:bg-amber-500"
         : "bg-muted-foreground/40";
 
   return (
