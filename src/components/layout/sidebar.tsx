@@ -41,6 +41,7 @@ const navItems = [
   { href: "/todos/completed", label: "Completed", icon: CheckSquare, ready: true },
   { href: "/todos/stats", label: "Stats", icon: BarChart2, ready: true },
   { href: "/grocery", label: "Grocery List", icon: ShoppingCart, ready: false },
+  { href: "/calendar", label: "Calendar", icon: Calendar, ready: true },
   { href: "/bookings", label: "Bookings", icon: Plane, ready: false },
 ];
 
