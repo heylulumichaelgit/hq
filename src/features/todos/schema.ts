@@ -5,9 +5,7 @@ export const todoSchema = z.object({
   description: z.string().max(1000).optional().or(z.literal("")),
   due_date: z.string().optional().or(z.literal("")),
   priority: z.enum(["low", "medium", "high"]).default("medium"),
-  assigned_to: z
-    .enum(["Andrew", "Chrystalla", "Both", "Lulu"])
-    .default("Both"),
+  assigned_to: z.string().min(1).default("Andrew,Chrystalla"),
   section: z.string().max(100).optional().or(z.literal("")),
   parent_id: z.string().uuid().optional().nullable(),
   project_id: z.string().uuid().optional().nullable(),

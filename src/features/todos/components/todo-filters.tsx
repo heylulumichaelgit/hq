@@ -160,7 +160,7 @@ export function TodoFilters() {
 
       {/* Filter Sheet */}
       <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
-        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-2xl">
+        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-2xl px-5">
           <SheetHeader className="pb-2">
             <SheetTitle className="text-base">Filters</SheetTitle>
           </SheetHeader>
@@ -211,7 +211,7 @@ export function TodoFilters() {
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Assignee</p>
               <div className="flex flex-wrap gap-2">
-                {(["Andrew", "Chrystalla", "Both", "Lulu"] as const).map((person) => (
+                {(["Andrew", "Chrystalla", "Lulu"] as const).map((person) => (
                   <FilterChip
                     key={person}
                     label={person}

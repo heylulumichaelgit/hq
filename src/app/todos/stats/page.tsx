@@ -7,8 +7,6 @@ import { startOfWeek, subWeeks, isSameWeek, format } from "date-fns";
 import { useTodos } from "@/features/todos/queries";
 import type { Todo } from "@/lib/supabase/types";
 
-type AssignedTo = "Andrew" | "Chrystalla" | "Both" | "Lulu";
-
 const PEOPLE = ["Andrew", "Chrystalla", "Lulu"] as const;
 type Person = (typeof PEOPLE)[number];
 
@@ -24,14 +22,18 @@ const RANK_BADGE: Record<number, string> = {
   3: "🥉",
 };
 
+function getAssignedPeople(assignedTo: string): string[] {
+  if (assignedTo === "Both") return ["Andrew", "Chrystalla"];
+  return assignedTo.split(",").map((p) => p.trim()).filter(Boolean);
+}
+
 function getPersonScore(todos: Todo[], person: Person): number {
   let score = 0;
   for (const t of todos) {
     if (!t.is_completed) continue;
-    if (t.assigned_to === person) {
-      score += 1;
-    } else if (t.assigned_to === "Both" && (person === "Andrew" || person === "Chrystalla")) {
-      score += 0.5;
+    const people = getAssignedPeople(t.assigned_to);
+    if (people.includes(person)) {
+      score += people.length > 1 ? 0.5 : 1;
     }
   }
   return score;
@@ -43,10 +45,9 @@ function getWeekScore(todos: Todo[], person: Person, weekStart: Date): number {
     if (!t.is_completed) continue;
     const completedAt = new Date(t.completed_at ?? t.updated_at);
     if (!isSameWeek(completedAt, weekStart, { weekStartsOn: 1 })) continue;
-    if (t.assigned_to === person) {
-      score += 1;
-    } else if (t.assigned_to === "Both" && (person === "Andrew" || person === "Chrystalla")) {
-      score += 0.5;
+    const people = getAssignedPeople(t.assigned_to);
+    if (people.includes(person)) {
+      score += people.length > 1 ? 0.5 : 1;
     }
   }
   return score;

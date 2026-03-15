@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   format,
   addDays,
@@ -11,17 +11,27 @@ import {
   startOfDay,
 } from "date-fns";
 import { useCalendarStore } from "../store";
-import { useGoogleCalendarEvents, useFamilyEvents, useDeleteFamilyEvent } from "../queries";
+import { useGoogleCalendarEvents, useFamilyEvents } from "../queries";
 import type { GoogleCalendarEvent, FamilyEvent } from "../queries";
-import { Trash2, List, CalendarDays, Loader2 } from "lucide-react";
+import { useTodos } from "@/features/todos/queries";
+import type { Todo } from "@/lib/supabase/types";
+import { List, CalendarDays, Loader2, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { EventDetailSheet } from "./event-detail-sheet";
+import type { EventDetail } from "./event-detail-sheet";
 
 // Calendar grid: 7am–10pm = 15 hours
 const HOUR_START = 7;
 const HOUR_END = 22;
 const TOTAL_HOURS = HOUR_END - HOUR_START;
 const HOUR_HEIGHT = 64; // px per hour
+
+const TODO_PRIORITY_COLOR: Record<string, string> = {
+  high: "#EF4444",
+  medium: "#F59E0B",
+  low: "#6366F1",
+};
 
 type DisplayEvent = {
   key: string;
@@ -30,9 +40,12 @@ type DisplayEvent = {
   end: Date;
   allDay: boolean;
   color: string;
-  source: "google" | "family";
+  source: "google" | "family" | "todo";
   familyEventId?: string;
   userLabel?: string;
+  description?: string;
+  calendarName?: string;
+  priority?: string;
 };
 
 function toDisplayEvent(e: GoogleCalendarEvent): DisplayEvent {
@@ -45,6 +58,7 @@ function toDisplayEvent(e: GoogleCalendarEvent): DisplayEvent {
     color: e.userColor,
     source: "google",
     userLabel: e.userDisplayName,
+    calendarName: e.calendarName,
   };
 }
 
@@ -58,6 +72,20 @@ function toDisplayFamilyEvent(e: FamilyEvent): DisplayEvent {
     color: "#8FA48A",
     source: "family",
     familyEventId: e.id,
+    description: e.description ?? undefined,
+  };
+}
+
+function toDisplayTodo(t: Todo): DisplayEvent {
+  const day = startOfDay(new Date(t.due_date! + "T00:00:00"));
+  return {
+    key: `todo-${t.id}`,
+    title: t.title,
+    start: day,
+    end: day,
+    allDay: true,
+    color: TODO_PRIORITY_COLOR[t.priority] ?? "#6366F1",
+    source: "todo",
   };
 }
 
@@ -65,17 +93,28 @@ function toDisplayFamilyEvent(e: FamilyEvent): DisplayEvent {
 
 function ScheduleEventRow({
   event,
-  onDelete,
+  onClick,
 }: {
   event: DisplayEvent;
-  onDelete?: (id: string) => void;
+  onClick: (e: DisplayEvent) => void;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-accent/50 transition-colors group">
-      <div
-        className="h-2.5 w-2.5 rounded-full shrink-0 mt-0.5"
-        style={{ backgroundColor: event.color }}
-      />
+    <button
+      onClick={() => onClick(event)}
+      className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-accent/50 transition-colors text-left"
+    >
+      {event.source === "todo" ? (
+        <Square
+          className="h-3 w-3 shrink-0 mt-0.5"
+          style={{ color: event.color }}
+          strokeWidth={2.5}
+        />
+      ) : (
+        <div
+          className="h-2.5 w-2.5 rounded-full shrink-0 mt-0.5"
+          style={{ backgroundColor: event.color }}
+        />
+      )}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium leading-snug truncate">{event.title}</p>
         <p className="text-xs text-muted-foreground mt-0.5">
@@ -87,15 +126,7 @@ function ScheduleEventRow({
           )}
         </p>
       </div>
-      {event.source === "family" && onDelete && (
-        <button
-          onClick={() => onDelete(event.familyEventId!)}
-          className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
-      )}
-    </div>
+    </button>
   );
 }
 
@@ -103,21 +134,31 @@ function ScheduleView() {
   const today = startOfDay(new Date());
   const timeMin = today.toISOString();
   const timeMax = addDays(today, 60).toISOString();
+  const [selectedEvent, setSelectedEvent] = useState<DisplayEvent | null>(null);
 
   const { data: googleEvents = [], isLoading: loadingGoogle } =
     useGoogleCalendarEvents(timeMin, timeMax);
   const { data: familyEvents = [], isLoading: loadingFamily } =
     useFamilyEvents(timeMin, timeMax);
-  const deleteFamilyEvent = useDeleteFamilyEvent();
+  const { data: todos = [] } = useTodos();
 
   const isLoading = loadingGoogle || loadingFamily;
+
+  const todoEvents: DisplayEvent[] = useMemo(
+    () =>
+      todos
+        .filter((t) => !t.parent_id && !t.is_completed && t.due_date)
+        .map(toDisplayTodo),
+    [todos]
+  );
 
   const allEvents: DisplayEvent[] = useMemo(
     () => [
       ...googleEvents.map(toDisplayEvent),
       ...familyEvents.map(toDisplayFamilyEvent),
+      ...todoEvents,
     ],
-    [googleEvents, familyEvents]
+    [googleEvents, familyEvents, todoEvents]
   );
 
   // Group by day — 60 days, skip empty days
@@ -202,16 +243,16 @@ function ScheduleView() {
               <ScheduleEventRow
                 key={event.key}
                 event={event}
-                onDelete={
-                  event.source === "family"
-                    ? (id) => deleteFamilyEvent.mutate(id)
-                    : undefined
-                }
+                onClick={setSelectedEvent}
               />
             ))}
           </div>
         </div>
       ))}
+      <EventDetailSheet
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+      />
     </div>
   );
 }
@@ -220,10 +261,10 @@ function ScheduleView() {
 
 interface EventChipProps {
   event: DisplayEvent;
-  onDelete?: (id: string) => void;
+  onClick: (e: DisplayEvent) => void;
 }
 
-function EventChip({ event, onDelete }: EventChipProps) {
+function EventChip({ event, onClick }: EventChipProps) {
   const startMinutes =
     (event.start.getHours() - HOUR_START) * 60 + event.start.getMinutes();
   const durationMinutes = Math.max(
@@ -238,8 +279,9 @@ function EventChip({ event, onDelete }: EventChipProps) {
   );
 
   return (
-    <div
-      className="absolute left-0.5 right-0.5 rounded px-1.5 py-0.5 overflow-hidden group cursor-default"
+    <button
+      onClick={() => onClick(event)}
+      className="absolute left-0.5 right-0.5 rounded px-1.5 py-0.5 overflow-hidden text-left cursor-pointer hover:brightness-95 transition-[filter]"
       style={{
         top: (top / 60) * HOUR_HEIGHT,
         height: (height / 60) * HOUR_HEIGHT,
@@ -261,20 +303,7 @@ function EventChip({ event, onDelete }: EventChipProps) {
           {event.userLabel}
         </p>
       )}
-      {event.source === "family" && onDelete && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-0.5 top-0.5 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(event.familyEventId!);
-          }}
-        >
-          <Trash2 className="h-3 w-3 text-destructive" />
-        </Button>
-      )}
-    </div>
+    </button>
   );
 }
 
@@ -283,6 +312,7 @@ function EventChip({ event, onDelete }: EventChipProps) {
 export function CalendarView() {
   const { weekStart, goBack, goForward, goToToday, view, setView } =
     useCalendarStore();
+  const [selectedEvent, setSelectedEvent] = useState<DisplayEvent | null>(null);
 
   const timeMin = weekStart.toISOString();
   const timeMax = addDays(weekStart, 7).toISOString();
@@ -291,7 +321,7 @@ export function CalendarView() {
     useGoogleCalendarEvents(timeMin, timeMax);
   const { data: familyEvents = [], isLoading: loadingFamily } =
     useFamilyEvents(timeMin, timeMax);
-  const deleteFamilyEvent = useDeleteFamilyEvent();
+  const { data: todos = [] } = useTodos();
 
   const days = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
@@ -303,12 +333,21 @@ export function CalendarView() {
     []
   );
 
+  const weekTodoEvents: DisplayEvent[] = useMemo(
+    () =>
+      todos
+        .filter((t) => !t.parent_id && !t.is_completed && t.due_date)
+        .map(toDisplayTodo),
+    [todos]
+  );
+
   const weekAllEvents: DisplayEvent[] = useMemo(
     () => [
       ...googleEvents.map(toDisplayEvent),
       ...familyEvents.map(toDisplayFamilyEvent),
+      ...weekTodoEvents,
     ],
-    [googleEvents, familyEvents]
+    [googleEvents, familyEvents, weekTodoEvents]
   );
 
   const allDayEvents = weekAllEvents.filter((e) => e.allDay);
@@ -406,17 +445,19 @@ export function CalendarView() {
               {days.map((day) => (
                 <div key={day.toISOString()} className="relative px-0.5 min-h-[24px]">
                   {eventsForDay(day, allDayEvents).map((e) => (
-                    <div
+                    <button
                       key={e.key}
-                      className="mb-0.5 truncate rounded px-1 py-0.5 text-[10px] font-medium"
+                      onClick={() => setSelectedEvent(e)}
+                      className="mb-0.5 w-full truncate rounded px-1 py-0.5 text-[10px] font-medium flex items-center gap-1 text-left hover:brightness-95 transition-[filter]"
                       style={{
-                        backgroundColor: e.color + "33",
+                        backgroundColor: e.color + "22",
                         borderLeft: `3px solid ${e.color}`,
                         color: e.color,
                       }}
                     >
-                      {e.title}
-                    </div>
+                      {e.source === "todo" && <Square className="h-2 w-2 shrink-0" strokeWidth={2.5} />}
+                      <span className="truncate">{e.title}</span>
+                    </button>
                   ))}
                 </div>
               ))}
@@ -462,11 +503,7 @@ export function CalendarView() {
                     <EventChip
                       key={e.key}
                       event={e}
-                      onDelete={
-                        e.source === "family"
-                          ? (id) => deleteFamilyEvent.mutate(id)
-                          : undefined
-                      }
+                      onClick={setSelectedEvent}
                     />
                   ))}
                 </div>
@@ -475,6 +512,10 @@ export function CalendarView() {
           </div>
         </>
       )}
+      <EventDetailSheet
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+      />
     </div>
   );
 }

@@ -45,10 +45,11 @@ import {
 } from "@/features/labels/queries";
 import { CommentPanel } from "./comment-panel";
 import { InlineQuickAdd } from "./inline-quick-add";
+import { AssigneePicker } from "./assignee-picker";
 import { RECURRENCE_OPTIONS, getRecurrenceLabel } from "@/lib/recurrence";
 import { cn } from "@/lib/utils";
 import type { Todo } from "@/lib/supabase/types";
-import type { AssignedTo, Priority } from "@/lib/supabase/types";
+import type { Priority } from "@/lib/supabase/types";
 
 interface TodoDetailSheetProps {
   todo: Todo | null;
@@ -56,77 +57,13 @@ interface TodoDetailSheetProps {
   onClose: () => void;
 }
 
-const ASSIGNED_TO_OPTIONS: AssignedTo[] = [
-  "Andrew",
-  "Chrystalla",
-  "Both",
-  "Lulu",
-];
-
 const PRIORITY_OPTIONS: Priority[] = ["high", "medium", "low"];
 
 const priorityColors: Record<Priority, { dot: string; label: string }> = {
   high: { dot: "bg-destructive", label: "text-destructive" },
-  medium: { dot: "bg-amber-700 dark:bg-amber-500", label: "text-amber-700 dark:text-amber-400" },
+  medium: { dot: "bg-amber-700 dark:bg-amber-300/40", label: "text-amber-700 dark:text-stone-300/70" },
   low: { dot: "bg-muted-foreground/40", label: "text-muted-foreground" },
 };
-
-const assigneeColors: Record<
-  AssignedTo,
-  { bg: string; text: string; ring: string }
-> = {
-  Andrew: {
-    bg: "bg-stone-200 dark:bg-stone-700/50",
-    text: "text-stone-700 dark:text-stone-300",
-    ring: "ring-stone-300 dark:ring-stone-600",
-  },
-  Chrystalla: {
-    bg: "bg-amber-100 dark:bg-amber-900/40",
-    text: "text-amber-800 dark:text-amber-300",
-    ring: "ring-amber-300 dark:ring-amber-700",
-  },
-  Both: {
-    bg: "bg-muted",
-    text: "text-muted-foreground",
-    ring: "ring-border",
-  },
-  Lulu: {
-    bg: "bg-rose-100 dark:bg-rose-900/30",
-    text: "text-rose-700 dark:text-rose-300",
-    ring: "ring-rose-200 dark:ring-rose-700",
-  },
-};
-
-function AssigneePill({
-  value,
-  onClick,
-}: {
-  value: AssignedTo;
-  onClick: () => void;
-}) {
-  const colors = assigneeColors[value];
-  const initials =
-    value === "Both"
-      ? "Bo"
-      : value.slice(0, 2).toUpperCase();
-
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 transition-opacity hover:opacity-80",
-        colors.bg,
-        colors.text,
-        colors.ring
-      )}
-    >
-      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-current/20 text-[9px] font-bold">
-        {initials}
-      </span>
-      {value}
-    </button>
-  );
-}
 
 function SubtaskCheckbox({
   checked,
@@ -141,13 +78,13 @@ function SubtaskCheckbox({
     priority === "high"
       ? "border-destructive"
       : priority === "medium"
-        ? "border-amber-700 dark:border-amber-500"
+        ? "border-amber-700 dark:border-amber-300/40"
         : "border-muted-foreground/40";
   const fillColor =
     priority === "high"
       ? "bg-destructive"
       : priority === "medium"
-        ? "bg-amber-700 dark:bg-amber-500"
+        ? "bg-amber-700 dark:bg-amber-300/40"
         : "bg-muted-foreground/40";
 
   return (
@@ -237,9 +174,7 @@ export function TodoDetailSheet({
     }
   };
 
-  const cycleAssignee = () => {
-    const idx = ASSIGNED_TO_OPTIONS.indexOf(todo.assigned_to);
-    const next = ASSIGNED_TO_OPTIONS[(idx + 1) % ASSIGNED_TO_OPTIONS.length];
+  const handleAssigneeChange = (next: string) => {
     updateTodo.mutate({ id: todo.id, assigned_to: next }, { onError: revertTodo });
   };
 
@@ -356,7 +291,7 @@ export function TodoDetailSheet({
           <div className="grid grid-cols-[120px_1fr] gap-y-3 items-center text-sm">
             {/* Assignee */}
             <span className="text-muted-foreground">Assignee</span>
-            <AssigneePill value={todo.assigned_to} onClick={cycleAssignee} />
+            <AssigneePicker value={todo.assigned_to} onChange={handleAssigneeChange} />
 
             {/* Due date */}
             <span className="text-muted-foreground">Due date</span>
@@ -468,14 +403,31 @@ export function TodoDetailSheet({
 
             {/* Project */}
             <span className="text-muted-foreground">Project</span>
-            <div className="flex items-center gap-1.5 text-sm">
-              <Folder className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              {project ? (
-                <span>{project.name}</span>
-              ) : (
-                <span className="text-muted-foreground">Inbox</span>
-              )}
-            </div>
+            <Select
+              value={todo.project_id ?? "inbox"}
+              onValueChange={(v) => {
+                const next = v === "inbox" ? null : v;
+                updateTodo.mutate({ id: todo.id, project_id: next }, { onError: revertTodo });
+              }}
+            >
+              <SelectTrigger className="h-7 w-auto gap-1.5 border-0 p-0 shadow-none text-sm focus:ring-0 [&>svg]:opacity-0 hover:opacity-70 transition-opacity">
+                <Folder className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <SelectValue>
+                  {project ? project.name : <span className="text-muted-foreground">Inbox</span>}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="inbox">Inbox</SelectItem>
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    <span className="flex items-center gap-2">
+                      <span className="inline-block h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+                      {p.name}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <Separator />

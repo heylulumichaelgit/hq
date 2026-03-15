@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Star, Inbox, CalendarDays, Menu } from "lucide-react";
+import { Star, Inbox, Calendar, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
 
 const tabs = [
   { href: "/todos/today", label: "Today", icon: Star },
   { href: "/todos", label: "Inbox", icon: Inbox },
-  { href: "/todos/upcoming", label: "Upcoming", icon: CalendarDays },
+  { href: "/calendar", label: "Calendar", icon: Calendar },
 ] as const;
 
 export function BottomNav() {

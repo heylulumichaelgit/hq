@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToggleTodo, useDeleteTodo, getSubtaskProgress } from "../queries";
 import { TodoFormDialog } from "./todo-form-dialog";
+import { parseAssignees } from "./assignee-picker";
 import type { Todo } from "@/lib/supabase/types";
 import {
   MoreVertical,
@@ -44,10 +45,10 @@ const priorityColors = {
     ring: "ring-destructive/30",
   },
   medium: {
-    border: "border-amber-700 dark:border-amber-500",
-    fill: "bg-amber-700 dark:bg-amber-500",
-    text: "text-amber-700 dark:text-amber-400",
-    ring: "ring-amber-700/20",
+    border: "border-amber-700 dark:border-amber-300/40",
+    fill: "bg-amber-700 dark:bg-amber-300/40",
+    text: "text-amber-700 dark:text-amber-300/70",
+    ring: "ring-amber-700/20 dark:ring-amber-300/10",
   },
   low: {
     border: "border-muted-foreground/40",
@@ -64,9 +65,7 @@ const personColors: Record<string, { bg: string; text: string }> = {
 };
 
 function AssigneeAvatar({ assignedTo }: { assignedTo: string }) {
-  const people = assignedTo === "Both"
-    ? ["Andrew", "Chrystalla"]
-    : assignedTo.split(",").map((p) => p.trim()).filter(Boolean);
+  const people = parseAssignees(assignedTo);
   return (
     <span className="inline-flex items-center gap-0.5 shrink-0">
       {people.map((person) => {

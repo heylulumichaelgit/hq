@@ -9,7 +9,7 @@ const COMMENTS_KEY = (todoId: string) => ["comments", todoId];
 const COMMENT_COUNTS_KEY = ["comment_counts"];
 
 export type CommentWithProfile = TodoComment & {
-  profiles: { display_name: string; avatar_url: string | null } | null;
+  profiles: { display_name: string; avatar_url: string | null; email: string | null } | null;
 };
 
 export function useComments(todoId: string, enabled = true) {
@@ -38,7 +38,7 @@ export function useComments(todoId: string, enabled = true) {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("todo_comments")
-        .select("*, profiles(display_name, avatar_url)")
+        .select("*, profiles(display_name, avatar_url, email)")
         .eq("todo_id", todoId)
         .order("created_at", { ascending: true });
       if (error) throw new Error(error.message);
@@ -78,7 +78,7 @@ export function useCreateComment() {
       const { data, error } = await supabase
         .from("todo_comments")
         .insert(comment)
-        .select("*, profiles(display_name, avatar_url)")
+        .select("*, profiles(display_name, avatar_url, email)")
         .single();
       if (error) throw error;
       return data as CommentWithProfile;

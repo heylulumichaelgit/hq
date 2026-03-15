@@ -24,12 +24,13 @@ function forceLogout() {
 function isAuthError(error: unknown): boolean {
   const msg =
     error instanceof Error ? error.message.toLowerCase() : String(error);
+  // Only treat explicit auth/session failures as auth errors, not network timeouts
   return (
-    msg.includes("jwt") ||
-    msg.includes("token") ||
-    msg.includes("auth") ||
+    msg.includes("jwt expired") ||
+    msg.includes("invalid jwt") ||
     msg.includes("refresh_token") ||
-    msg.includes("timed out")
+    msg.includes("session_not_found") ||
+    msg.includes("not authenticated")
   );
 }
 

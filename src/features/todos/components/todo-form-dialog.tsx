@@ -25,6 +25,7 @@ import { useAuthStore } from "@/features/auth/store";
 import { todoSchema } from "../schema";
 import type { Todo } from "@/lib/supabase/types";
 import { Plus, Loader2, Repeat2, Calendar } from "lucide-react";
+import { AssigneePicker } from "./assignee-picker";
 import { RECURRENCE_OPTIONS } from "@/lib/recurrence";
 import { parseDateFromText } from "@/lib/parse-date";
 import { format } from "date-fns";
@@ -54,7 +55,7 @@ export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection
       ? format(new Date(todo.due_date), "yyyy-MM-dd")
       : "",
     priority: todo?.priority ?? "medium",
-    assigned_to: todo?.assigned_to ?? "Both",
+    assigned_to: todo?.assigned_to ?? "Andrew,Chrystalla",
     section: todo?.section ?? defaultSection ?? "",
     project_id: todo?.project_id ?? defaultProjectId ?? null,
     recurrence_rule: todo?.recurrence_rule ?? null,
@@ -69,7 +70,7 @@ export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection
         ? format(new Date(todo.due_date), "yyyy-MM-dd")
         : "",
       priority: todo?.priority ?? "medium",
-      assigned_to: todo?.assigned_to ?? "Both",
+      assigned_to: todo?.assigned_to ?? "Andrew,Chrystalla",
       section: todo?.section ?? defaultSection ?? "",
       project_id: todo?.project_id ?? defaultProjectId ?? null,
       recurrence_rule: todo?.recurrence_rule ?? null,
@@ -131,7 +132,7 @@ export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection
           description: "",
           due_date: "",
           priority: "medium",
-          assigned_to: "Both",
+          assigned_to: "Andrew,Chrystalla",
           section: defaultSection ?? "",
           project_id: defaultProjectId ?? null,
           recurrence_rule: null,
@@ -315,25 +316,10 @@ export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Assigned To</Label>
-              <Select
+              <AssigneePicker
                 value={form.assigned_to}
-                onValueChange={(v) =>
-                  setForm((f) => ({
-                    ...f,
-                    assigned_to: v as typeof f.assigned_to,
-                  }))
-                }
-              >
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Andrew">Andrew</SelectItem>
-                  <SelectItem value="Chrystalla">Chrystalla</SelectItem>
-                  <SelectItem value="Both">Both</SelectItem>
-                  <SelectItem value="Lulu">Lulu</SelectItem>
-                </SelectContent>
-              </Select>
+                onChange={(v) => setForm((f) => ({ ...f, assigned_to: v }))}
+              />
             </div>
 
             <div className="space-y-2">

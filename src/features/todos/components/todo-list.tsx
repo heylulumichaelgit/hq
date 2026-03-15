@@ -66,9 +66,11 @@ function SectionHeader({
 
 interface TodoListProps {
   projectId?: string | null;
+  /** When set, overrides the assignee filter to show only this person's tasks */
+  personFilter?: string;
 }
 
-export function TodoList({ projectId }: TodoListProps) {
+export function TodoList({ projectId, personFilter }: TodoListProps) {
   const { data: todos, isLoading, error } = useTodos();
   const { filters, collapsedSections, toggleSection } = useTodoFilterStore();
   const todoLabelsMap = useAllTodoLabels();
@@ -86,6 +88,16 @@ export function TodoList({ projectId }: TodoListProps) {
       }
       return true;
     });
+
+    // Person override (Mine/All toggle on inbox page)
+    if (personFilter) {
+      result = result.filter((t) => {
+        const people = t.assigned_to === "Both"
+          ? ["Andrew", "Chrystalla"]
+          : t.assigned_to.split(",").map((p) => p.trim());
+        return people.includes(personFilter);
+      });
+    }
 
     // Text search
     if (filters.search) {
@@ -199,7 +211,7 @@ export function TodoList({ projectId }: TodoListProps) {
       sectionedTodos: grouped,
       totalFiltered,
     };
-  }, [todos, filters, todoLabelsMap]);
+  }, [todos, filters, todoLabelsMap, projectId, personFilter]);
 
   if (isLoading) {
     return (

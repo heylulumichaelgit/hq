@@ -3,6 +3,12 @@
 import { useState, useRef, useEffect } from "react";
 import { useComments, useCreateComment, useDeleteComment } from "@/features/comments/queries";
 import { useAuthStore } from "@/features/auth/store";
+import { EMAIL_TO_PERSON } from "@/features/todos/hooks/use-my-person";
+
+function resolveCommentName(email: string | null | undefined, displayName: string | null | undefined): string {
+  if (email && EMAIL_TO_PERSON[email]) return EMAIL_TO_PERSON[email];
+  return displayName ?? "Unknown";
+}
 import { Button } from "@/components/ui/button";
 import { Loader2, Trash2, Send } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -71,12 +77,12 @@ export function CommentPanel({ todoId }: CommentPanelProps) {
               className="group flex items-start gap-2"
             >
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary text-[10px] font-bold mt-0.5">
-                {c.profiles?.display_name?.charAt(0).toUpperCase() ?? "?"}
+                {resolveCommentName(c.profiles?.email, c.profiles?.display_name).charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2">
                   <span className="text-xs font-medium">
-                    {c.profiles?.display_name ?? "Unknown"}
+                    {resolveCommentName(c.profiles?.email, c.profiles?.display_name)}
                   </span>
                   <span className="text-[10px] text-muted-foreground">
                     {formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}

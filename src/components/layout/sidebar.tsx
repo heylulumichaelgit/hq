@@ -62,7 +62,6 @@ import {
 
 const navMain = [
   { href: "/todos/today", label: "Today", icon: Star },
-  { href: "/todos/upcoming", label: "Upcoming", icon: Calendar },
   { href: "/todos", label: "Inbox", icon: Inbox },
   { href: "/todos/completed", label: "Completed", icon: CheckSquare },
   { href: "/calendar", label: "Calendar", icon: Calendar },

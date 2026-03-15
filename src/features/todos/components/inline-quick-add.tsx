@@ -12,24 +12,24 @@ import {
 } from "@/components/ui/select";
 import { useCreateTodo } from "../queries";
 import { useAuthStore } from "@/features/auth/store";
-import type { Priority, AssignedTo } from "@/lib/supabase/types";
+import type { Priority } from "@/lib/supabase/types";
 import {
   Plus,
   Calendar,
   Flag,
-  User,
   Loader2,
   X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { parseDateFromText } from "@/lib/parse-date";
+import { AssigneePicker } from "./assignee-picker";
 
 interface InlineQuickAddProps {
   parentId?: string;
   projectId?: string | null;
   defaultSection?: string;
-  defaultAssignedTo?: AssignedTo;
+  defaultAssignedTo?: string;
   defaultPriority?: Priority;
   onDone?: () => void;
   placeholder?: string;
@@ -39,7 +39,7 @@ export function InlineQuickAdd({
   parentId,
   projectId,
   defaultSection,
-  defaultAssignedTo = "Both",
+  defaultAssignedTo = "Andrew,Chrystalla",
   defaultPriority = "medium",
   onDone,
   placeholder = "Add task...",
@@ -48,7 +48,7 @@ export function InlineQuickAdd({
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [priority, setPriority] = useState<Priority>(defaultPriority);
-  const [assignedTo, setAssignedTo] = useState<AssignedTo>(defaultAssignedTo);
+  const [assignedTo, setAssignedTo] = useState<string>(defaultAssignedTo);
   const inputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuthStore();
   const createTodo = useCreateTodo();
@@ -184,18 +184,7 @@ export function InlineQuickAdd({
           </SelectContent>
         </Select>
 
-        <Select value={assignedTo} onValueChange={(v) => setAssignedTo(v as AssignedTo)}>
-          <SelectTrigger className="h-7 w-auto gap-1 text-xs px-2 border">
-            <User className="h-3 w-3" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Andrew">Andrew</SelectItem>
-            <SelectItem value="Chrystalla">Chrystalla</SelectItem>
-            <SelectItem value="Both">Both</SelectItem>
-            <SelectItem value="Lulu">Lulu</SelectItem>
-          </SelectContent>
-        </Select>
+        <AssigneePicker value={assignedTo} onChange={setAssignedTo} compact />
 
         <div className="flex-1" />
 

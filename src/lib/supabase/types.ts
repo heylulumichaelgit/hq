@@ -1,5 +1,6 @@
 export type Priority = "low" | "medium" | "high";
-export type AssignedTo = "Andrew" | "Chrystalla" | "Both" | "Lulu";
+export type Person = "Andrew" | "Chrystalla" | "Lulu";
+export type AssignedTo = string; // comma-separated Person values, e.g. "Andrew" or "Andrew,Chrystalla"
 
 export interface Database {
   public: {

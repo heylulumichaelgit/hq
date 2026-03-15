@@ -1,10 +1,10 @@
 "use client";
 
 import { create } from "zustand";
-import type { Priority, AssignedTo } from "@/lib/supabase/types";
+import type { Priority, Person } from "@/lib/supabase/types";
 
 interface TodoFilters {
-  assignedTo: AssignedTo | "all";
+  assignedTo: Person | "all";
   priority: Priority | "all";
   completed: "all" | "completed" | "active";
   sortBy: "due_date" | "priority" | "created_at";

@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
     const people =
       todo.assigned_to === "Both"
         ? ["Andrew", "Chrystalla"]
-        : [todo.assigned_to];
+        : todo.assigned_to.split(",").map((p: string) => p.trim()).filter(Boolean);
     for (const person of people) {
       if (!byPerson.has(person)) byPerson.set(person, []);
       byPerson.get(person)!.push(todo);
