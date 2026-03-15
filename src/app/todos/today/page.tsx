@@ -169,7 +169,7 @@ export default function TodayPage() {
       {Array.from(todayByProject.entries()).map(([projectId, projectTodos]) => {
         const project = projects.find((p) => p.id === projectId);
         const label = project?.name ?? "Inbox";
-        const color = project?.color ?? "#6366f1";
+        const color = project?.color ?? "#8B8680";
 
         return (
           <Collapsible key={projectId ?? "inbox"} defaultOpen>

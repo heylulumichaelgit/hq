@@ -78,8 +78,9 @@ const navSecondary = [
 ];
 
 const PROJECT_COLORS = [
-  "#6366f1", "#ef4444", "#f97316", "#f59e0b",
-  "#22c55e", "#14b8a6", "#3b82f6", "#a855f7", "#ec4899",
+  "#C4956A", "#B5896E", "#C9B99A",
+  "#8FA48A", "#8B9672", "#9B8E7E",
+  "#C49A9A", "#7A8FA0", "#8B8680",
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
