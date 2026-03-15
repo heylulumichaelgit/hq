@@ -93,6 +93,18 @@ describe("getNextDueDate — monthly", () => {
   it("handles year rollover from December", () => {
     expect(getNextDueDate("monthly", "2025-12-01")).toBe("2026-01-01");
   });
+
+  it("Jan 31 → Feb 28 (non-leap year)", () => {
+    expect(getNextDueDate("monthly", "2025-01-31")).toBe("2025-02-28");
+  });
+
+  it("Jan 31 → Feb 29 (leap year)", () => {
+    expect(getNextDueDate("monthly", "2024-01-31")).toBe("2024-02-29");
+  });
+
+  it("Mar 31 → Apr 30 (April has only 30 days)", () => {
+    expect(getNextDueDate("monthly", "2025-03-31")).toBe("2025-04-30");
+  });
 });
 
 describe("getNextDueDate — yearly", () => {

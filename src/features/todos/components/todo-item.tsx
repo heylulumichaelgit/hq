@@ -17,8 +17,6 @@ import { useToggleTodo, useDeleteTodo, getSubtaskProgress } from "../queries";
 import { TodoFormDialog } from "./todo-form-dialog";
 import { LabelPicker } from "./label-picker";
 import { CommentPanel } from "./comment-panel";
-import { useAllTodoLabels } from "@/features/labels/queries";
-import { useCommentCounts } from "@/features/comments/queries";
 import type { Todo } from "@/lib/supabase/types";
 import {
   MoreVertical,
@@ -148,9 +146,11 @@ interface TodoItemProps {
   todo: Todo;
   allTodos: Todo[];
   depth?: number;
+  todoLabelsMap: Map<string, import("@/lib/supabase/types").Label[]>;
+  commentCountsMap: Map<string, number>;
 }
 
-export function TodoItem({ todo, allTodos, depth = 0 }: TodoItemProps) {
+export function TodoItem({ todo, allTodos, depth = 0, todoLabelsMap, commentCountsMap }: TodoItemProps) {
   const isSubtask = depth > 0;
   const toggleTodo = useToggleTodo();
   const deleteTodo = useDeleteTodo();
@@ -160,10 +160,8 @@ export function TodoItem({ todo, allTodos, depth = 0 }: TodoItemProps) {
   const [showComments, setShowComments] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
 
-  const todoLabelsMap = useAllTodoLabels();
-  const commentCounts = useCommentCounts();
   const todoLabels = todoLabelsMap.get(todo.id) ?? [];
-  const commentCount = commentCounts.get(todo.id) ?? 0;
+  const commentCount = commentCountsMap.get(todo.id) ?? 0;
 
   const subtasks = allTodos.filter((t) => t.parent_id === todo.id);
   const hasSubtasks = subtasks.length > 0;
@@ -193,7 +191,12 @@ export function TodoItem({ todo, allTodos, depth = 0 }: TodoItemProps) {
 
   const handleCascadeComplete = () => {
     incompleteSubtasks.forEach((sub) =>
-      toggleTodo.mutate({ id: sub.id, is_completed: true })
+      toggleTodo.mutate({
+        id: sub.id,
+        is_completed: true,
+        recurrence_rule: sub.recurrence_rule,
+        due_date: sub.due_date,
+      })
     );
     setShowCascadePrompt(false);
   };
@@ -461,7 +464,7 @@ export function TodoItem({ todo, allTodos, depth = 0 }: TodoItemProps) {
       {/* Render subtasks (collapsible) */}
       <AnimatePresence>
         {subtasksOpen && subtasks.map((sub) => (
-          <TodoItem key={sub.id} todo={sub} allTodos={allTodos} depth={depth + 1} />
+          <TodoItem key={sub.id} todo={sub} allTodos={allTodos} depth={depth + 1} todoLabelsMap={todoLabelsMap} commentCountsMap={commentCountsMap} />
         ))}
       </AnimatePresence>
 

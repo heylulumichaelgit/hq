@@ -3,6 +3,8 @@
 import { useState, useMemo } from "react";
 import { useTodos } from "@/features/todos/queries";
 import { TodoItem } from "@/features/todos/components/todo-item";
+import { useAllTodoLabels } from "@/features/labels/queries";
+import { useCommentCounts } from "@/features/comments/queries";
 import { motion, AnimatePresence } from "framer-motion";
 import { startOfWeek, isSameWeek, format, startOfDay } from "date-fns";
 import { Archive, ChevronDown, Loader2, Trophy } from "lucide-react";
@@ -32,6 +34,8 @@ function getWeekLabel(weekStart: Date, now: Date): string {
 export default function CompletedPage() {
   const { data: todos, isLoading } = useTodos();
   const [activeFilter, setActiveFilter] = useState<PersonFilter>("All");
+  const todoLabelsMap = useAllTodoLabels();
+  const commentCounts = useCommentCounts();
 
   const { completedTodos, weekGroups } = useMemo(() => {
     if (!todos) return { completedTodos: [], weekGroups: [] };
@@ -151,7 +155,7 @@ export default function CompletedPage() {
               <div className="space-y-1 pt-1">
                 <AnimatePresence mode="popLayout">
                   {weekTodos.map((todo) => (
-                    <TodoItem key={todo.id} todo={todo} allTodos={allTodos} />
+                    <TodoItem key={todo.id} todo={todo} allTodos={allTodos} todoLabelsMap={todoLabelsMap} commentCountsMap={commentCounts} />
                   ))}
                 </AnimatePresence>
               </div>

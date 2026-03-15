@@ -16,7 +16,23 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER on_todo_completed
+CREATE TRIGGER on_todo_completed_update
   BEFORE UPDATE ON public.todos
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_todo_completed();
+
+-- Also handle INSERT (e.g. importing pre-completed todos)
+CREATE OR REPLACE FUNCTION public.handle_todo_completed_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.is_completed = true AND NEW.completed_at IS NULL THEN
+    NEW.completed_at := now();
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER on_todo_completed_insert
+  BEFORE INSERT ON public.todos
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_todo_completed_insert();

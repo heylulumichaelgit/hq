@@ -16,6 +16,7 @@ import { useMemo } from "react";
 import { isPast, isToday, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useAllTodoLabels } from "@/features/labels/queries";
+import { useCommentCounts } from "@/features/comments/queries";
 import {
   Collapsible,
   CollapsibleContent,
@@ -69,6 +70,7 @@ export function TodoList({ projectId }: TodoListProps) {
   const { data: todos, isLoading, error } = useTodos();
   const { filters, collapsedSections, toggleSection } = useTodoFilterStore();
   const todoLabelsMap = useAllTodoLabels();
+  const commentCounts = useCommentCounts();
 
   const { overdueTodos, sectionedTodos, totalFiltered } = useMemo(() => {
     if (!todos) return { overdueTodos: [], sectionedTodos: new Map<string, Todo[]>(), totalFiltered: 0 };
@@ -260,6 +262,8 @@ export function TodoList({ projectId }: TodoListProps) {
                     key={todo.id}
                     todo={todo}
                     allTodos={allTodos}
+                    todoLabelsMap={todoLabelsMap}
+                    commentCountsMap={commentCounts}
                   />
                 ))}
               </AnimatePresence>
@@ -284,6 +288,8 @@ export function TodoList({ projectId }: TodoListProps) {
                     key={todo.id}
                     todo={todo}
                     allTodos={allTodos}
+                    todoLabelsMap={todoLabelsMap}
+                    commentCountsMap={commentCounts}
                   />
                 ))}
               </AnimatePresence>
@@ -307,6 +313,8 @@ export function TodoList({ projectId }: TodoListProps) {
                       key={todo.id}
                       todo={todo}
                       allTodos={allTodos}
+                      todoLabelsMap={todoLabelsMap}
+                      commentCountsMap={commentCounts}
                     />
                   ))}
                 </AnimatePresence>

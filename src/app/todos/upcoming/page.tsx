@@ -3,6 +3,8 @@
 import { useTodos } from "@/features/todos/queries";
 import { useProjects } from "@/features/projects/queries";
 import { TodoItem } from "@/features/todos/components/todo-item";
+import { useAllTodoLabels } from "@/features/labels/queries";
+import { useCommentCounts } from "@/features/comments/queries";
 import { motion, AnimatePresence } from "framer-motion";
 import { addDays, format, isToday, startOfDay, isSameDay } from "date-fns";
 import { useMemo, useState } from "react";
@@ -18,6 +20,8 @@ import {
 export default function UpcomingPage() {
   const { data: todos, isLoading } = useTodos();
   const { data: projects = [] } = useProjects();
+  const todoLabelsMap = useAllTodoLabels();
+  const commentCounts = useCommentCounts();
 
   const days = useMemo(
     () => Array.from({ length: 14 }, (_, i) => addDays(startOfDay(new Date()), i)),
@@ -37,7 +41,7 @@ export default function UpcomingPage() {
     for (const day of days) {
       const key = format(day, "yyyy-MM-dd");
       const matching = topLevel.filter((t) => {
-        const due = startOfDay(new Date(t.due_date!));
+        const due = startOfDay(new Date(t.due_date! + "T00:00:00"));
         return isSameDay(due, day);
       });
       if (matching.length > 0) {
@@ -156,6 +160,8 @@ export default function UpcomingPage() {
                       key={todo.id}
                       todo={todo}
                       allTodos={allTodos}
+                      todoLabelsMap={todoLabelsMap}
+                      commentCountsMap={commentCounts}
                     />
                   ))}
                 </AnimatePresence>

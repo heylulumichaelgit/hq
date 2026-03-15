@@ -3,6 +3,8 @@
 import { useTodos } from "@/features/todos/queries";
 import { useProjects } from "@/features/projects/queries";
 import { TodoItem } from "@/features/todos/components/todo-item";
+import { useAllTodoLabels } from "@/features/labels/queries";
+import { useCommentCounts } from "@/features/comments/queries";
 import { motion, AnimatePresence } from "framer-motion";
 import { isToday, isPast, startOfDay } from "date-fns";
 import { useMemo } from "react";
@@ -19,6 +21,8 @@ import { ChevronDown } from "lucide-react";
 export default function TodayPage() {
   const { data: todos, isLoading } = useTodos();
   const { data: projects = [] } = useProjects();
+  const todoLabelsMap = useAllTodoLabels();
+  const commentCounts = useCommentCounts();
 
   const { overdue, todayByProject, totalCount, doneCount, totalMinutes } = useMemo(() => {
     if (!todos) return { overdue: [], todayByProject: new Map(), totalCount: 0, doneCount: 0, totalMinutes: 0 };
@@ -155,7 +159,7 @@ export default function TodayPage() {
           </div>
           <AnimatePresence mode="popLayout">
             {overdue.map((todo) => (
-              <TodoItem key={todo.id} todo={todo} allTodos={allTodos} />
+              <TodoItem key={todo.id} todo={todo} allTodos={allTodos} todoLabelsMap={todoLabelsMap} commentCountsMap={commentCounts} />
             ))}
           </AnimatePresence>
         </div>
@@ -182,7 +186,7 @@ export default function TodayPage() {
               <div className="space-y-1">
                 <AnimatePresence mode="popLayout">
                   {(projectTodos as Todo[]).map((t) => (
-                    <TodoItem key={t.id} todo={t} allTodos={allTodos} />
+                    <TodoItem key={t.id} todo={t} allTodos={allTodos} todoLabelsMap={todoLabelsMap} commentCountsMap={commentCounts} />
                   ))}
                 </AnimatePresence>
               </div>

@@ -291,12 +291,15 @@ export function TodoBoard({ projectId }: TodoBoardProps) {
       });
     }
 
-    // Unsectioned column (section === null or "")
-    cols.push({
-      id: UNSECTIONED_ID,
-      label: "Unsectioned",
-      todos: projectTodos.filter((t) => !t.section),
-    });
+    // Unsectioned column — only show if there are unsectioned todos OR no named sections
+    const unsectionedTodos = projectTodos.filter((t) => !t.section);
+    if (unsectionedTodos.length > 0 || sortedSections.length === 0) {
+      cols.push({
+        id: UNSECTIONED_ID,
+        label: "Unsectioned",
+        todos: unsectionedTodos,
+      });
+    }
 
     return cols;
   }, [sections, projectTodos]);

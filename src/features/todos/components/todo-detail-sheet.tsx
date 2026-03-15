@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useQueryClient } from "@tanstack/react-query";
 import { useUpdateTodo, useDeleteTodo, useToggleTodo } from "../queries";
 import { useProjects } from "@/features/projects/queries";
 import {
@@ -167,6 +168,7 @@ export function TodoDetailSheet({
   allTodos,
   onClose,
 }: TodoDetailSheetProps) {
+  const queryClient = useQueryClient();
   const updateTodo = useUpdateTodo();
   const deleteTodo = useDeleteTodo();
   const toggleTodo = useToggleTodo();
@@ -175,6 +177,11 @@ export function TodoDetailSheet({
   const todoLabelsMap = useAllTodoLabels();
   const addLabel = useAddLabelToTodo();
   const removeLabel = useRemoveLabelFromTodo();
+
+  const todoRef = useRef(todo);
+  useEffect(() => { todoRef.current = todo; }, [todo]);
+
+  const revertTodo = () => queryClient.invalidateQueries({ queryKey: ["todos"] });
 
   const [titleValue, setTitleValue] = useState(todo?.title ?? "");
   const [descriptionValue, setDescriptionValue] = useState(
@@ -187,11 +194,13 @@ export function TodoDetailSheet({
 
   // Sync local state when todo changes
   useEffect(() => {
-    setTitleValue(todo?.title ?? "");
-    setDescriptionValue(todo?.description ?? "");
+    if (todo) {
+      setTitleValue(todo.title);
+      setDescriptionValue(todo.description ?? "");
+    }
     setShowDatePicker(false);
     setLabelPopoverOpen(false);
-  }, [todo?.id, todo?.title, todo?.description]);
+  }, [todo?.id]);
 
   // Auto-resize textarea
   const autoResize = useCallback((el: HTMLTextAreaElement | null) => {
@@ -212,29 +221,32 @@ export function TodoDetailSheet({
   const completedSubtasks = subtasks.filter((t) => t.is_completed).length;
 
   const handleTitleBlur = () => {
+    const t = todoRef.current;
+    if (!t) return;
     const trimmed = titleValue.trim();
-    if (trimmed && trimmed !== todo.title) {
-      updateTodo.mutate({ id: todo.id, title: trimmed });
+    if (trimmed && trimmed !== t.title) {
+      updateTodo.mutate({ id: t.id, title: trimmed }, { onError: () => setTitleValue(t.title) });
     }
   };
 
   const handleDescriptionBlur = () => {
-    const trimmed = descriptionValue.trim() || null;
-    if (trimmed !== todo.description) {
-      updateTodo.mutate({ id: todo.id, description: trimmed });
+    const t = todoRef.current;
+    if (!t) return;
+    if (descriptionValue !== (t.description ?? "")) {
+      updateTodo.mutate({ id: t.id, description: descriptionValue || null }, { onError: () => setDescriptionValue(t.description ?? "") });
     }
   };
 
   const cycleAssignee = () => {
     const idx = ASSIGNED_TO_OPTIONS.indexOf(todo.assigned_to);
     const next = ASSIGNED_TO_OPTIONS[(idx + 1) % ASSIGNED_TO_OPTIONS.length];
-    updateTodo.mutate({ id: todo.id, assigned_to: next });
+    updateTodo.mutate({ id: todo.id, assigned_to: next }, { onError: revertTodo });
   };
 
   const cyclePriority = () => {
     const idx = PRIORITY_OPTIONS.indexOf(todo.priority);
     const next = PRIORITY_OPTIONS[(idx + 1) % PRIORITY_OPTIONS.length];
-    updateTodo.mutate({ id: todo.id, priority: next });
+    updateTodo.mutate({ id: todo.id, priority: next }, { onError: revertTodo });
   };
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -242,9 +254,9 @@ export function TodoDetailSheet({
       updateTodo.mutate({
         id: todo.id,
         due_date: format(date, "yyyy-MM-dd"),
-      });
+      }, { onError: revertTodo });
     } else {
-      updateTodo.mutate({ id: todo.id, due_date: null });
+      updateTodo.mutate({ id: todo.id, due_date: null }, { onError: revertTodo });
     }
     setShowDatePicker(false);
   };
@@ -253,14 +265,14 @@ export function TodoDetailSheet({
     updateTodo.mutate({
       id: todo.id,
       duration_minutes: value === "none" ? null : parseInt(value, 10),
-    });
+    }, { onError: revertTodo });
   };
 
   const handleRecurrenceChange = (value: string) => {
     updateTodo.mutate({
       id: todo.id,
       recurrence_rule: value === "none" ? null : value,
-    });
+    }, { onError: revertTodo });
   };
 
   const formatDuration = (minutes: number) => {
