@@ -70,7 +70,7 @@ export function LoginForm() {
       className="w-full max-w-sm"
     >
       {/* Heading */}
-      <div className="mb-8">
+      <div className="mb-8 text-center md:text-left">
         <h2 className="text-3xl font-bold tracking-tight">Welcome back</h2>
         <p className="mt-2 text-muted-foreground">Sign in to your family hub</p>
       </div>
