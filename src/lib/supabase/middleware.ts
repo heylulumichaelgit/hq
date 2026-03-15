@@ -42,14 +42,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.json({ error: 'Supabase client creation failed' }, { status: 500 });
   }
 
-  let user;
-  try {
-    const result = await supabase.auth.getUser();
-    user = result.data.user;
-  } catch (error) {
-    console.error('Failed to get user:', error);
-    return NextResponse.json({ error: 'Failed to get user' }, { status: 500 });
-  }
+  const { data: { user } } = await supabase.auth.getUser();
 
   if (
     !user &&
