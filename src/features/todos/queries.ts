@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect } from "react";
 import type { Todo, TodoInsert, TodoUpdate } from "@/lib/supabase/types";
+import { getNextDueDate } from "@/lib/recurrence";
 
 const TODOS_KEY = ["todos"];
 const QUERY_TIMEOUT_MS = 10_000;
@@ -150,11 +151,29 @@ export function useToggleTodo() {
     mutationFn: async ({
       id,
       is_completed,
+      recurrence_rule,
+      due_date,
     }: {
       id: string;
       is_completed: boolean;
+      recurrence_rule?: string | null;
+      due_date?: string | null;
     }) => {
       const supabase = createClient();
+
+      // Recurring todo being completed: advance to next occurrence instead
+      if (is_completed && recurrence_rule) {
+        const nextDue = getNextDueDate(recurrence_rule, due_date ?? null);
+        const { data, error } = await supabase
+          .from("todos")
+          .update({ is_completed: false, due_date: nextDue })
+          .eq("id", id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data as Todo;
+      }
+
       const { data, error } = await supabase
         .from("todos")
         .update({ is_completed })
@@ -171,13 +190,17 @@ export function useToggleTodo() {
   });
 }
 
-/** Get all unique section names from existing todos */
-export function useSections() {
+/** Get unique section names for a given project (or Inbox if projectId is null) */
+export function useSections(projectId?: string | null) {
   const { data: todos } = useTodos();
 
   const sections = Array.from(
     new Set(
       (todos ?? [])
+        .filter((t) => {
+          if (projectId === undefined) return true;
+          return t.project_id === projectId;
+        })
         .map((t) => t.section)
         .filter((s): s is string => !!s)
     )

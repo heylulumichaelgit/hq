@@ -14,16 +14,16 @@ export default function TodosPage() {
     >
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Family Todos</h1>
+          <h1 className="text-2xl font-bold">Inbox</h1>
           <p className="text-sm text-muted-foreground">
-            Shared task list for the family
+            Tasks not assigned to any project
           </p>
         </div>
-        <TodoFormDialog />
+        <TodoFormDialog defaultProjectId={null} />
       </div>
 
       <TodoFilters />
-      <TodoList />
+      <TodoList projectId={null} />
     </motion.div>
   );
 }

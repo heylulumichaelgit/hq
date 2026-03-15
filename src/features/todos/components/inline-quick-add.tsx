@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,9 +23,11 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { parseDateFromText } from "@/lib/parse-date";
 
 interface InlineQuickAddProps {
   parentId?: string;
+  projectId?: string | null;
   defaultSection?: string;
   defaultAssignedTo?: AssignedTo;
   defaultPriority?: Priority;
@@ -35,6 +37,7 @@ interface InlineQuickAddProps {
 
 export function InlineQuickAdd({
   parentId,
+  projectId,
   defaultSection,
   defaultAssignedTo = "Both",
   defaultPriority = "medium",
@@ -49,6 +52,8 @@ export function InlineQuickAdd({
   const inputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuthStore();
   const createTodo = useCreateTodo();
+
+  const parsedDate = useMemo(() => parseDateFromText(title), [title]);
 
   useEffect(() => {
     if (isExpanded && inputRef.current) {
@@ -66,14 +71,19 @@ export function InlineQuickAdd({
   const handleSubmit = async () => {
     if (!title.trim() || !user) return;
 
+    // Use NLP-parsed date if no manual date set and we found one
+    const effectiveDueDate = dueDate || (parsedDate ? parsedDate.dateStr : null);
+    const effectiveTitle = (parsedDate && !dueDate) ? parsedDate.textWithoutDate || title.trim() : title.trim();
+
     try {
       await createTodo.mutateAsync({
-        title: title.trim(),
+        title: effectiveTitle,
         priority,
         assigned_to: assignedTo,
-        due_date: dueDate || null,
+        due_date: effectiveDueDate,
         created_by: user.id,
         parent_id: parentId || null,
+        project_id: projectId ?? null,
         section: defaultSection || null,
       });
       reset();
@@ -132,6 +142,24 @@ export function InlineQuickAdd({
         placeholder={placeholder}
         className="border-0 p-0 h-auto text-sm font-medium shadow-none focus-visible:ring-0"
       />
+
+      {/* NLP date preview */}
+      <AnimatePresence>
+        {parsedDate && !dueDate && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="flex items-center gap-1.5"
+          >
+            <span className="flex items-center gap-1 text-xs text-primary bg-primary/10 rounded px-2 py-0.5">
+              <Calendar className="h-3 w-3" />
+              {parsedDate.label}
+            </span>
+            <span className="text-xs text-muted-foreground">detected — will be set on add</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-1">
