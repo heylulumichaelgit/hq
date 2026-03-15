@@ -46,6 +46,7 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { InlineQuickAdd } from "./inline-quick-add";
 import { getRecurrenceLabel } from "@/lib/recurrence";
+import { TodoDetailSheet } from "./todo-detail-sheet";
 
 const priorityColors = {
   high: {
@@ -157,6 +158,7 @@ export function TodoItem({ todo, allTodos, depth = 0 }: TodoItemProps) {
   const [subtasksOpen, setSubtasksOpen] = useState(true);
   const [showCascadePrompt, setShowCascadePrompt] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
 
   const todoLabelsMap = useAllTodoLabels();
   const commentCounts = useCommentCounts();
@@ -230,17 +232,22 @@ export function TodoItem({ todo, allTodos, depth = 0 }: TodoItemProps) {
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-2">
-            <motion.span
-              animate={{
-                textDecoration: todo.is_completed ? "line-through" : "none",
-              }}
-              className={cn(
-                "text-sm font-medium leading-snug",
-                todo.is_completed && "text-muted-foreground"
-              )}
+            <button
+              className="text-left hover:underline focus:outline-none"
+              onClick={() => setShowDetail(true)}
             >
-              {todo.title}
-            </motion.span>
+              <motion.span
+                animate={{
+                  textDecoration: todo.is_completed ? "line-through" : "none",
+                }}
+                className={cn(
+                  "text-sm font-medium leading-snug",
+                  todo.is_completed && "text-muted-foreground"
+                )}
+              >
+                {todo.title}
+              </motion.span>
+            </button>
           </div>
 
           {todo.description && !todo.is_completed && (
@@ -267,7 +274,9 @@ export function TodoItem({ todo, allTodos, depth = 0 }: TodoItemProps) {
                 <Clock className="h-3 w-3" />
                 {todo.duration_minutes < 60
                   ? `${todo.duration_minutes}m`
-                  : `${todo.duration_minutes / 60}h`}
+                  : todo.duration_minutes % 60 === 0
+                    ? `${todo.duration_minutes / 60}h`
+                    : `${Math.floor(todo.duration_minutes / 60)}h ${todo.duration_minutes % 60}m`}
               </span>
             )}
 
@@ -455,6 +464,12 @@ export function TodoItem({ todo, allTodos, depth = 0 }: TodoItemProps) {
           <TodoItem key={sub.id} todo={sub} allTodos={allTodos} depth={depth + 1} />
         ))}
       </AnimatePresence>
+
+      <TodoDetailSheet
+        todo={showDetail ? todo : null}
+        allTodos={allTodos}
+        onClose={() => setShowDetail(false)}
+      />
     </>
   );
 }

@@ -46,7 +46,7 @@ export default function CompletedPage() {
     // Group by week start (Monday)
     const weekMap = new Map<number, Todo[]>();
     for (const t of filtered) {
-      const weekStart = startOfWeek(new Date(t.updated_at), { weekStartsOn: 1 });
+      const weekStart = startOfWeek(new Date(t.completed_at ?? t.updated_at), { weekStartsOn: 1 });
       const key = weekStart.getTime();
       if (!weekMap.has(key)) weekMap.set(key, []);
       weekMap.get(key)!.push(t);

@@ -120,6 +120,7 @@ export interface Database {
           position: number;
           recurrence_rule: string | null;
           duration_minutes: number | null;
+          completed_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -138,6 +139,7 @@ export interface Database {
           position?: number;
           recurrence_rule?: string | null;
           duration_minutes?: number | null;
+          completed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -156,6 +158,7 @@ export interface Database {
           position?: number;
           recurrence_rule?: string | null;
           duration_minutes?: number | null;
+          completed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

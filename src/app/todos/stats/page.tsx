@@ -41,8 +41,8 @@ function getWeekScore(todos: Todo[], person: Person, weekStart: Date): number {
   let score = 0;
   for (const t of todos) {
     if (!t.is_completed) continue;
-    const updatedAt = new Date(t.updated_at);
-    if (!isSameWeek(updatedAt, weekStart, { weekStartsOn: 1 })) continue;
+    const completedAt = new Date(t.completed_at ?? t.updated_at);
+    if (!isSameWeek(completedAt, weekStart, { weekStartsOn: 1 })) continue;
     if (t.assigned_to === person) {
       score += 1;
     } else if (t.assigned_to === "Both" && (person === "Andrew" || person === "Chrystalla")) {
