@@ -11,6 +11,7 @@ interface TodoFilters {
   sortOrder: "asc" | "desc";
   search: string;
   section: string | "all";
+  labelId: string | null;
 }
 
 interface TodoFilterState {
@@ -29,6 +30,7 @@ const defaultFilters: TodoFilters = {
   sortOrder: "desc",
   search: "",
   section: "all",
+  labelId: null,
 };
 
 export const useTodoFilterStore = create<TodoFilterState>((set) => ({

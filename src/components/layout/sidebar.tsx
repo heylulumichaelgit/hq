@@ -13,23 +13,41 @@ import {
   Moon,
   Menu,
   X,
+  Plus,
+  Folder,
+  Pencil,
+  Trash2,
+  Inbox,
+  Star,
+  BarChart2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/features/auth/store";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { PushToggle } from "@/features/notifications/push-toggle";
+import { useProjects, useCreateProject, useDeleteProject, useUpdateProject } from "@/features/projects/queries";
 
 const navItems = [
-  { href: "/todos", label: "Todos", icon: CheckSquare, ready: true },
+  { href: "/todos/today", label: "Today", icon: Star, ready: true },
+  { href: "/todos/upcoming", label: "Upcoming", icon: Calendar, ready: true },
+  { href: "/todos", label: "Inbox", icon: Inbox, ready: true },
+  { href: "/todos/completed", label: "Completed", icon: CheckSquare, ready: true },
+  { href: "/todos/stats", label: "Stats", icon: BarChart2, ready: true },
   { href: "/grocery", label: "Grocery List", icon: ShoppingCart, ready: false },
   { href: "/calendar", label: "Calendar", icon: Calendar, ready: true },
   { href: "/bookings", label: "Bookings", icon: Plane, ready: false },
+];
+
+const PROJECT_COLORS = [
+  "#6366f1", "#ef4444", "#f97316", "#f59e0b",
+  "#22c55e", "#14b8a6", "#3b82f6", "#a855f7", "#ec4899",
 ];
 
 export function Sidebar() {
@@ -38,6 +56,39 @@ export function Sidebar() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { data: projects = [] } = useProjects();
+  const createProject = useCreateProject();
+  const deleteProject = useDeleteProject();
+  const updateProject = useUpdateProject();
+  const [addingProject, setAddingProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [newProjectColor, setNewProjectColor] = useState(PROJECT_COLORS[0]);
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const newProjectInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (addingProject) newProjectInputRef.current?.focus();
+  }, [addingProject]);
+
+  const handleCreateProject = async () => {
+    if (!newProjectName.trim() || !profile) return;
+    await createProject.mutateAsync({
+      name: newProjectName.trim(),
+      color: newProjectColor,
+      position: projects.length,
+      created_by: profile.id,
+    });
+    setNewProjectName("");
+    setNewProjectColor(PROJECT_COLORS[0]);
+    setAddingProject(false);
+  };
+
+  const handleRenameProject = async (id: string) => {
+    if (!editingName.trim()) return;
+    await updateProject.mutateAsync({ id, name: editingName.trim() });
+    setEditingProjectId(null);
+  };
 
   const handleLogout = () => {
     setMobileOpen(false);
@@ -69,9 +120,9 @@ export function Sidebar() {
 
       <Separator />
 
-      <nav className="flex-1 space-y-1 p-3">
+      <nav className="flex-1 overflow-y-auto space-y-1 p-3">
         {navItems.map((item) => {
-          const isActive = pathname.startsWith(item.href);
+          const isActive = pathname === item.href;
           return (
             <Link
               key={item.href}
@@ -93,6 +144,149 @@ export function Sidebar() {
             </Link>
           );
         })}
+
+        {/* Projects section */}
+        <div className="pt-3">
+          <div className="flex items-center justify-between px-3 pb-1">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Projects
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => setAddingProject(true)}
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+
+          {projects.map((project) => {
+            const isActive = pathname === `/todos/project/${project.id}`;
+            return (
+              <div key={project.id} className="group relative">
+                {editingProjectId === project.id ? (
+                  <div className="flex items-center gap-1 px-3 py-1">
+                    <span
+                      className="h-2.5 w-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: project.color }}
+                    />
+                    <Input
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleRenameProject(project.id);
+                        if (e.key === "Escape") setEditingProjectId(null);
+                      }}
+                      onBlur={() => handleRenameProject(project.id)}
+                      className="h-7 text-xs px-1 border-0 shadow-none focus-visible:ring-1"
+                      autoFocus
+                    />
+                  </div>
+                ) : (
+                  <Link
+                    href={`/todos/project/${project.id}`}
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors min-h-[40px]",
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    )}
+                  >
+                    <span
+                      className="h-2.5 w-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: project.color }}
+                    />
+                    <span className="flex-1 truncate">{project.name}</span>
+                    <span className="hidden group-hover:flex items-center gap-0.5">
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setEditingProjectId(project.id);
+                          setEditingName(project.name);
+                        }}
+                        className="p-0.5 rounded hover:bg-background/50"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          deleteProject.mutate(project.id);
+                        }}
+                        className="p-0.5 rounded hover:bg-background/50 text-destructive"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </span>
+                  </Link>
+                )}
+              </div>
+            );
+          })}
+
+          {/* New project inline form */}
+          <AnimatePresence>
+            {addingProject && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="px-3 py-2 space-y-2"
+              >
+                <Input
+                  ref={newProjectInputRef}
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleCreateProject();
+                    if (e.key === "Escape") {
+                      setAddingProject(false);
+                      setNewProjectName("");
+                    }
+                  }}
+                  placeholder="Project name..."
+                  className="h-8 text-sm"
+                />
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {PROJECT_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => setNewProjectColor(c)}
+                      className={cn(
+                        "h-5 w-5 rounded-full transition-transform",
+                        newProjectColor === c && "ring-2 ring-offset-1 ring-foreground scale-110"
+                      )}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    className="h-7 flex-1 text-xs"
+                    onClick={handleCreateProject}
+                    disabled={!newProjectName.trim() || createProject.isPending}
+                  >
+                    Add
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setAddingProject(false);
+                      setNewProjectName("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </nav>
 
       <Separator />

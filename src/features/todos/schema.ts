@@ -10,6 +10,9 @@ export const todoSchema = z.object({
     .default("Both"),
   section: z.string().max(100).optional().or(z.literal("")),
   parent_id: z.string().uuid().optional().nullable(),
+  project_id: z.string().uuid().optional().nullable(),
+  recurrence_rule: z.string().optional().nullable(),
+  duration_minutes: z.number().int().min(1).max(480).optional().nullable(),
 });
 
 export type TodoFormData = z.infer<typeof todoSchema>;

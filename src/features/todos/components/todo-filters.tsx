@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useTodoFilterStore } from "../store";
 import { useSections } from "../queries";
+import { useLabels } from "@/features/labels/queries";
 import {
   Search,
   RotateCcw,
@@ -56,6 +57,7 @@ function FilterChip({
 export function TodoFilters() {
   const { filters, setFilter, resetFilters } = useTodoFilterStore();
   const sections = useSections();
+  const { data: labels = [] } = useLabels();
 
   const hasActiveFilters =
     filters.assignedTo !== "all" ||
@@ -63,6 +65,7 @@ export function TodoFilters() {
     filters.completed !== "active" ||
     filters.search !== "" ||
     filters.section !== "all" ||
+    filters.labelId !== null ||
     filters.sortBy !== "created_at" ||
     filters.sortOrder !== "desc";
 
@@ -136,6 +139,46 @@ export function TodoFilters() {
             }
           />
         ))}
+
+        {/* Label filter chips (only if labels exist) */}
+        {labels.length > 0 && (
+          <>
+            <span className="h-4 w-px bg-border" />
+            {labels.map((label) => (
+              <button
+                key={label.id}
+                onClick={() =>
+                  setFilter("labelId", filters.labelId === label.id ? null : label.id)
+                }
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors border cursor-pointer",
+                  filters.labelId === label.id
+                    ? "opacity-100"
+                    : "opacity-70 hover:opacity-100"
+                )}
+                style={
+                  filters.labelId === label.id
+                    ? {
+                        backgroundColor: label.color + "30",
+                        borderColor: label.color + "80",
+                        color: label.color,
+                      }
+                    : {
+                        backgroundColor: "transparent",
+                        borderColor: label.color + "50",
+                        color: label.color,
+                      }
+                }
+              >
+                <span
+                  className="h-1.5 w-1.5 rounded-full shrink-0"
+                  style={{ backgroundColor: label.color }}
+                />
+                {label.name}
+              </button>
+            ))}
+          </>
+        )}
 
         {/* Section filter (only if sections exist) */}
         {sections.length > 0 && (

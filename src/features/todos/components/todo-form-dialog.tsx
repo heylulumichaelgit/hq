@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -20,24 +20,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCreateTodo, useUpdateTodo, useSections } from "../queries";
+import { useProjects } from "@/features/projects/queries";
 import { useAuthStore } from "@/features/auth/store";
 import { todoSchema } from "../schema";
 import type { Todo } from "@/lib/supabase/types";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Repeat2, Calendar } from "lucide-react";
+import { RECURRENCE_OPTIONS } from "@/lib/recurrence";
+import { parseDateFromText } from "@/lib/parse-date";
 import { format } from "date-fns";
 
 interface TodoFormDialogProps {
   todo?: Todo;
   trigger?: React.ReactNode;
+  defaultProjectId?: string | null;
+  defaultSection?: string;
 }
 
-export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
+export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection }: TodoFormDialogProps) {
   const [open, setOpen] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { user } = useAuthStore();
   const createTodo = useCreateTodo();
   const updateTodo = useUpdateTodo();
-  const existingSections = useSections();
+  const { data: projects = [] } = useProjects();
+  const existingSections = useSections(todo?.project_id ?? defaultProjectId);
 
   const isEditing = !!todo;
 
@@ -49,7 +55,10 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
       : "",
     priority: todo?.priority ?? "medium",
     assigned_to: todo?.assigned_to ?? "Both",
-    section: todo?.section ?? "",
+    section: todo?.section ?? defaultSection ?? "",
+    project_id: todo?.project_id ?? defaultProjectId ?? null,
+    recurrence_rule: todo?.recurrence_rule ?? null,
+    duration_minutes: todo?.duration_minutes ?? null,
   });
 
   const resetForm = () => {
@@ -61,7 +70,10 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
         : "",
       priority: todo?.priority ?? "medium",
       assigned_to: todo?.assigned_to ?? "Both",
-      section: todo?.section ?? "",
+      section: todo?.section ?? defaultSection ?? "",
+      project_id: todo?.project_id ?? defaultProjectId ?? null,
+      recurrence_rule: todo?.recurrence_rule ?? null,
+      duration_minutes: todo?.duration_minutes ?? null,
     });
     setErrors({});
   };
@@ -93,6 +105,9 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
           priority: data.priority,
           assigned_to: data.assigned_to,
           section: data.section || null,
+          project_id: data.project_id ?? null,
+          recurrence_rule: data.recurrence_rule ?? null,
+          duration_minutes: data.duration_minutes ?? null,
         });
       } else {
         await createTodo.mutateAsync({
@@ -102,6 +117,9 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
           priority: data.priority,
           assigned_to: data.assigned_to,
           section: data.section || null,
+          project_id: data.project_id ?? null,
+          recurrence_rule: data.recurrence_rule ?? null,
+          duration_minutes: data.duration_minutes ?? null,
           created_by: user!.id,
         });
       }
@@ -114,7 +132,10 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
           due_date: "",
           priority: "medium",
           assigned_to: "Both",
-          section: "",
+          section: defaultSection ?? "",
+          project_id: defaultProjectId ?? null,
+          recurrence_rule: null,
+          duration_minutes: null,
         });
       }
     } catch (err: unknown) {
@@ -129,6 +150,12 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
   };
 
   const isPending = createTodo.isPending || updateTodo.isPending;
+
+  // NLP date detection (only when due_date not manually set)
+  const parsedDate = useMemo(
+    () => (!form.due_date && !isEditing ? parseDateFromText(form.title) : null),
+    [form.title, form.due_date, isEditing]
+  );
 
   return (
     <Dialog
@@ -165,6 +192,18 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
             {errors.title && (
               <p className="text-sm text-destructive">{errors.title}</p>
             )}
+            {parsedDate && (
+              <button
+                type="button"
+                onClick={() =>
+                  setForm((f) => ({ ...f, due_date: parsedDate.dateStr }))
+                }
+                className="flex items-center gap-1.5 text-xs text-primary bg-primary/10 hover:bg-primary/20 rounded px-2 py-1 transition-colors w-fit"
+              >
+                <Calendar className="h-3 w-3" />
+                Set due: {parsedDate.label}
+              </button>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -195,6 +234,34 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
             </div>
 
             <div className="space-y-2">
+              <Label>Repeat</Label>
+              <Select
+                value={form.recurrence_rule ?? "none"}
+                onValueChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    recurrence_rule: v === "none" ? null : v,
+                  }))
+                }
+              >
+                <SelectTrigger className="min-h-[48px]">
+                  <Repeat2 className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <SelectValue placeholder="Never" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Never</SelectItem>
+                  {RECURRENCE_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
               <Label>Priority</Label>
               <Select
                 value={form.priority}
@@ -212,6 +279,34 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
                   <SelectItem value="low">Low</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
                   <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Duration</Label>
+              <Select
+                value={form.duration_minutes == null ? "none" : String(form.duration_minutes)}
+                onValueChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    duration_minutes: v === "none" ? null : Number(v),
+                  }))
+                }
+              >
+                <SelectTrigger className="min-h-[48px]">
+                  <SelectValue placeholder="No estimate" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No estimate</SelectItem>
+                  <SelectItem value="15">15 min</SelectItem>
+                  <SelectItem value="30">30 min</SelectItem>
+                  <SelectItem value="45">45 min</SelectItem>
+                  <SelectItem value="60">1 hour</SelectItem>
+                  <SelectItem value="90">1.5 hours</SelectItem>
+                  <SelectItem value="120">2 hours</SelectItem>
+                  <SelectItem value="180">3 hours</SelectItem>
+                  <SelectItem value="240">4 hours</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -260,6 +355,39 @@ export function TodoFormDialog({ todo, trigger }: TodoFormDialogProps) {
               </datalist>
             </div>
           </div>
+
+          {projects.length > 0 && (
+            <div className="space-y-2">
+              <Label>Project</Label>
+              <Select
+                value={form.project_id ?? "inbox"}
+                onValueChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    project_id: v === "inbox" ? null : v,
+                  }))
+                }
+              >
+                <SelectTrigger className="min-h-[48px]">
+                  <SelectValue placeholder="Inbox" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="inbox">Inbox</SelectItem>
+                  {projects.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: p.color }}
+                        />
+                        {p.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {errors.form && (
             <p className="text-sm text-destructive">{errors.form}</p>

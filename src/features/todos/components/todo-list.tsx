@@ -15,6 +15,8 @@ import {
 import { useMemo } from "react";
 import { isPast, isToday, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useAllTodoLabels } from "@/features/labels/queries";
+import { useCommentCounts } from "@/features/comments/queries";
 import {
   Collapsible,
   CollapsibleContent,
@@ -60,15 +62,28 @@ function SectionHeader({
   );
 }
 
-export function TodoList() {
+interface TodoListProps {
+  projectId?: string | null;
+}
+
+export function TodoList({ projectId }: TodoListProps) {
   const { data: todos, isLoading, error } = useTodos();
   const { filters, collapsedSections, toggleSection } = useTodoFilterStore();
+  const todoLabelsMap = useAllTodoLabels();
+  const commentCounts = useCommentCounts();
 
   const { overdueTodos, sectionedTodos, totalFiltered } = useMemo(() => {
     if (!todos) return { overdueTodos: [], sectionedTodos: new Map<string, Todo[]>(), totalFiltered: 0 };
 
     // Only show top-level todos (subtasks rendered within parent)
-    let result = todos.filter((t) => !t.parent_id);
+    // Scope to project: null = Inbox (no project), string = specific project, undefined = all
+    let result = todos.filter((t) => {
+      if (t.parent_id) return false; // skip subtasks
+      if (projectId !== undefined) {
+        return t.project_id === projectId;
+      }
+      return true;
+    });
 
     // Text search
     if (filters.search) {
@@ -102,6 +117,14 @@ export function TodoList() {
       result = result.filter((t) => !t.is_completed);
     } else if (filters.completed === "completed") {
       result = result.filter((t) => t.is_completed);
+    }
+
+    // Filter by label
+    if (filters.labelId) {
+      result = result.filter((t) => {
+        const labels = todoLabelsMap.get(t.id) ?? [];
+        return labels.some((l) => l.id === filters.labelId);
+      });
     }
 
     // Filter by section
@@ -169,7 +192,7 @@ export function TodoList() {
       sectionedTodos: grouped,
       totalFiltered,
     };
-  }, [todos, filters]);
+  }, [todos, filters, todoLabelsMap]);
 
   if (isLoading) {
     return (
@@ -206,7 +229,7 @@ export function TodoList() {
               : "Try adjusting your filters."}
           </p>
         </div>
-        <InlineQuickAdd />
+        <InlineQuickAdd projectId={projectId} />
       </div>
     );
   }
@@ -239,6 +262,8 @@ export function TodoList() {
                     key={todo.id}
                     todo={todo}
                     allTodos={allTodos}
+                    todoLabelsMap={todoLabelsMap}
+                    commentCountsMap={commentCounts}
                   />
                 ))}
               </AnimatePresence>
@@ -263,6 +288,8 @@ export function TodoList() {
                     key={todo.id}
                     todo={todo}
                     allTodos={allTodos}
+                    todoLabelsMap={todoLabelsMap}
+                    commentCountsMap={commentCounts}
                   />
                 ))}
               </AnimatePresence>
@@ -286,6 +313,8 @@ export function TodoList() {
                       key={todo.id}
                       todo={todo}
                       allTodos={allTodos}
+                      todoLabelsMap={todoLabelsMap}
+                      commentCountsMap={commentCounts}
                     />
                   ))}
                 </AnimatePresence>
@@ -297,7 +326,7 @@ export function TodoList() {
 
       {/* Inline quick add */}
       <div className="pt-2">
-        <InlineQuickAdd />
+        <InlineQuickAdd projectId={projectId} />
       </div>
 
       <p className="text-xs text-muted-foreground pt-2">
