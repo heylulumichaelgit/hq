@@ -36,6 +36,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Only cache GET requests — cache.put() does not support POST/PUT/etc.
+  if (event.request.method !== "GET") {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   // Network-first for everything else, fall back to cache
   event.respondWith(
     fetch(event.request)

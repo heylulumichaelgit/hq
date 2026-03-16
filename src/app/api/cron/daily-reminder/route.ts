@@ -71,12 +71,12 @@ export async function GET(request: NextRequest) {
     .lte("due_date", todayStr)
     .is("parent_id", null);
 
-  // ── Fetch today's family events ──────────────────────────
+  // ── Fetch today's family events (overlap: starts before day end AND ends after day start) ──
   const { data: events = [] } = await supabase
     .from("family_events")
     .select("id, title, start_at, all_day")
-    .gte("start_at", dayStart)
-    .lte("start_at", dayEnd)
+    .lt("start_at", dayEnd)
+    .gt("end_at", dayStart)
     .order("start_at");
 
   const eventCount = events?.length ?? 0;

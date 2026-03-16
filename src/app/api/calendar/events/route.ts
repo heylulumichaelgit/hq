@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 const USER_COLORS: Record<string, string> = {
   Andrew: "#3b82f6",      // blue-500
   Chrystalla: "#a855f7",  // purple-500
+  Lulu: "#ec4899",        // pink-500
 };
 const FALLBACK_COLOR = "#6b7280"; // gray-500
 
@@ -112,5 +113,13 @@ export async function GET(request: NextRequest) {
     })
   );
 
-  return NextResponse.json({ events: allEvents.flat() });
+  // Deduplicate by event ID — same event can appear for multiple users when they share a calendar
+  const seen = new Set<string>();
+  const deduped = allEvents.flat().filter((e) => {
+    if (seen.has(e.id)) return false;
+    seen.add(e.id);
+    return true;
+  });
+
+  return NextResponse.json({ events: deduped });
 }

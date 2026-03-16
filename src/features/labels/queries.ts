@@ -114,7 +114,8 @@ export function useSyncTodoLabels() {
     mutationFn: async ({ todoId, labelIds }: { todoId: string; labelIds: string[] }) => {
       const supabase = createClient();
       // Delete all existing, then insert new
-      await supabase.from("todo_labels").delete().eq("todo_id", todoId);
+      const { error: deleteError } = await supabase.from("todo_labels").delete().eq("todo_id", todoId);
+      if (deleteError) throw deleteError;
       if (labelIds.length > 0) {
         const { error } = await supabase
           .from("todo_labels")

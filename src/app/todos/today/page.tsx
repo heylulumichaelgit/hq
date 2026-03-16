@@ -91,20 +91,15 @@ export default function TodayPage() {
       className="space-y-6"
     >
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-            <Sun className="h-5 w-5 text-muted-foreground" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">Today</h1>
-            <p className="text-sm text-muted-foreground">
-              {new Date().toLocaleDateString("en-GB", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-              })}
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold">Today</h1>
+          <p className="text-sm text-muted-foreground">
+            {new Date().toLocaleDateString("en-GB", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+            })}
+          </p>
         </div>
         {totalCount > 0 && (
           <span className="text-sm text-muted-foreground">

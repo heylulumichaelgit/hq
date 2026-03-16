@@ -88,6 +88,7 @@ export function useFamilyEvents(timeMin: string, timeMax: string) {
       const json = await res.json();
       return json.events ?? [];
     },
+    staleTime: 5 * 60_000, // 5 minutes
   });
 }
 

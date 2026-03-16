@@ -7,7 +7,7 @@ import { useAllTodoLabels } from "@/features/labels/queries";
 import { useCommentCounts } from "@/features/comments/queries";
 import { motion, AnimatePresence } from "framer-motion";
 import { startOfWeek, isSameWeek, format, startOfDay } from "date-fns";
-import { Archive, ChevronDown, Loader2, Trophy } from "lucide-react";
+import { ChevronDown, Loader2, Trophy, Archive } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -91,17 +91,12 @@ export default function CompletedPage() {
       className="space-y-6"
     >
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-          <Archive className="h-5 w-5 text-muted-foreground" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold">Completed</h1>
-          <p className="text-sm text-muted-foreground">
-            {completedTodos.length}{" "}
-            {completedTodos.length === 1 ? "task" : "tasks"} completed
-          </p>
-        </div>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Completed</h1>
+        <p className="text-sm text-muted-foreground">
+          {completedTodos.length}{" "}
+          {completedTodos.length === 1 ? "task" : "tasks"}
+        </p>
       </div>
 
       {/* Person filter tabs */}

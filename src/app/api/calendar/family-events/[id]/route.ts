@@ -62,7 +62,8 @@ export async function DELETE(
   const { error } = await supabase
     .from("family_events")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("created_by", user.id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
@@ -95,10 +96,12 @@ export async function PATCH(
     .from("family_events")
     .update(body)
     .eq("id", id)
+    .eq("created_by", user.id)
     .select()
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!data) return NextResponse.json({ error: "Not found or not authorized" }, { status: 404 });
 
   return NextResponse.json({ event: data });
 }

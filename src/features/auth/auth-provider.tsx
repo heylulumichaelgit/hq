@@ -60,8 +60,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await loadProfile(user.id);
       } else {
         setProfile(null);
-        // Only redirect on a genuine sign-out (session expired, explicit logout).
-        if (!isAuthPage) window.location.href = "/login";
+        // Re-check pathname at callback time, not at effect setup time (stale closure fix)
+        const onAuthPage = AUTH_PAGES.some((p) => window.location.pathname.startsWith(p));
+        if (!onAuthPage) window.location.href = "/login";
       }
 
       setLoading(false);

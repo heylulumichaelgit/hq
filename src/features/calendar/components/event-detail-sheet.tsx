@@ -49,8 +49,12 @@ export function EventDetailSheet({ event, onClose }: EventDetailSheetProps) {
 
   const handleDelete = async () => {
     if (!event.familyEventId) return;
-    await deleteFamilyEvent.mutateAsync(event.familyEventId);
-    onClose();
+    try {
+      await deleteFamilyEvent.mutateAsync(event.familyEventId);
+      onClose();
+    } catch {
+      // Error is surfaced via deleteFamilyEvent.isError below
+    }
   };
 
   const timeLabel = event.allDay
@@ -140,7 +144,14 @@ export function EventDetailSheet({ event, onClose }: EventDetailSheetProps) {
           )}
 
           {event.source === "family" && event.familyEventId && (
-            <div className="flex justify-end pt-2">
+            <div className="flex flex-col items-end gap-2 pt-2">
+              {deleteFamilyEvent.isError && (
+                <p className="text-xs text-destructive">
+                  {deleteFamilyEvent.error instanceof Error
+                    ? deleteFamilyEvent.error.message
+                    : "Failed to delete event"}
+                </p>
+              )}
               <Button
                 variant="destructive"
                 size="sm"

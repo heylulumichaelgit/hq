@@ -36,8 +36,12 @@ export function CommentPanel({ todoId }: CommentPanelProps) {
   const handleSubmit = async () => {
     if (!body.trim() || !user) return;
     const text = body.trim();
-    setBody("");
-    await createComment.mutateAsync({ todo_id: todoId, created_by: user.id, body: text });
+    try {
+      await createComment.mutateAsync({ todo_id: todoId, created_by: user.id, body: text });
+      setBody("");
+    } catch {
+      // Keep body intact so user doesn't lose their comment on failure
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

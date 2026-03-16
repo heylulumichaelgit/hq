@@ -1,4 +1,5 @@
 import { google } from "googleapis";
+import { addDays } from "date-fns";
 
 const SCOPES = [
   "https://www.googleapis.com/auth/calendar.readonly",
@@ -102,12 +103,16 @@ export async function createBusyEvent(
   const startDate = new Date(startAt);
   const endDate = new Date(endAt);
 
+  // Google Calendar all-day events use exclusive end dates (end = day after last day).
+  // e.g. a single-day event on 2026-03-20 needs start: "2026-03-20", end: "2026-03-21".
+  const allDayEnd = addDays(endDate, 1);
+
   const event = allDay
     ? {
         summary: title,
         transparency: "opaque" as const,
         start: { date: startDate.toISOString().split("T")[0] },
-        end: { date: endDate.toISOString().split("T")[0] },
+        end: { date: allDayEnd.toISOString().split("T")[0] },
       }
     : {
         summary: title,

@@ -7,7 +7,6 @@ import type { Todo, TodoInsert, TodoUpdate } from "@/lib/supabase/types";
 import { getNextDueDate } from "@/lib/recurrence";
 
 const TODOS_KEY = ["todos"];
-const QUERY_TIMEOUT_MS = 10_000;
 
 function forceLogout() {
   document.cookie.split(";").forEach((c) => {
@@ -24,13 +23,17 @@ function forceLogout() {
 function isAuthError(error: unknown): boolean {
   const msg =
     error instanceof Error ? error.message.toLowerCase() : String(error);
-  // Only treat explicit auth/session failures as auth errors, not network timeouts
   return (
     msg.includes("jwt expired") ||
     msg.includes("invalid jwt") ||
     msg.includes("refresh_token") ||
     msg.includes("session_not_found") ||
-    msg.includes("not authenticated")
+    msg.includes("not authenticated") ||
+    msg.includes("invalid claim") ||
+    msg.includes("token is expired") ||
+    msg.includes("token has expired") ||
+    msg.includes("user not found") ||
+    msg.includes("auth session missing")
   );
 }
 
@@ -57,31 +60,21 @@ export function useTodos() {
 
   return useQuery<Todo[]>({
     queryKey: TODOS_KEY,
+    retry: 1,
+    staleTime: 30_000,
     queryFn: async () => {
       const supabase = createClient();
 
-      const query = supabase
+      const { data, error } = await supabase
         .from("todos")
         .select("*")
         .order("created_at", { ascending: false });
 
-      const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Query timed out")), QUERY_TIMEOUT_MS)
-      );
-
-      let result: { data: Todo[] | null; error: { message: string } | null };
-      try {
-        result = (await Promise.race([query, timeout])) as typeof result;
-      } catch (err) {
-        if (isAuthError(err)) forceLogout();
-        throw err;
+      if (error) {
+        if (isAuthError(error)) forceLogout();
+        throw new Error(error.message);
       }
-
-      if (result.error) {
-        if (isAuthError(result.error)) forceLogout();
-        throw new Error(result.error.message);
-      }
-      return (result.data ?? []) as Todo[];
+      return (data ?? []) as Todo[];
     },
   });
 }

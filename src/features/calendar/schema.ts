@@ -9,6 +9,17 @@ export const familyEventSchema = z.object({
   end_time: z.string().optional(),
   all_day: z.boolean().default(false),
   create_busy_events: z.boolean().default(true),
-});
+}).refine(
+  (data) => {
+    if (data.start_date > data.end_date) return false;
+    if (data.start_date === data.end_date && !data.all_day) {
+      const start = data.start_time ?? "00:00";
+      const end = data.end_time ?? "23:59";
+      return end > start;
+    }
+    return true;
+  },
+  { message: "End must be after start", path: ["end_date"] }
+);
 
 export type FamilyEventFormData = z.infer<typeof familyEventSchema>;

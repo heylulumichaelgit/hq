@@ -45,10 +45,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Get subscriptions — either for a specific user or all users
+  // Get subscriptions — either for a specific user or all users.
+  // If user_id is specified it must be the caller's own ID to prevent
+  // one family member triggering arbitrary notifications for another.
+  const targetUserId = user_id ?? undefined;
+  if (targetUserId && targetUserId !== user.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   let query = supabase.from("push_subscriptions").select("*");
-  if (user_id) {
-    query = query.eq("user_id", user_id);
+  if (targetUserId) {
+    query = query.eq("user_id", targetUserId);
   }
 
   const { data: subscriptions, error } = await query;

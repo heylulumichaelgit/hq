@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -72,6 +72,7 @@ export function TodoFilters() {
   const sections = useSections();
   const { data: labels = [] } = useLabels();
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const activeFilterCount = [
     filters.assignedTo !== "all",
@@ -87,76 +88,103 @@ export function TodoFilters() {
     filters.sortBy !== "created_at" ||
     filters.sortOrder !== "desc";
 
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (searchOpen) searchRef.current?.focus();
+  }, [searchOpen]);
+
   return (
-    <div className="space-y-2">
-      {/* Search bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+    <div className="flex items-center gap-2">
+      {/* Search — icon-only on mobile, input on sm+ */}
+      <div className="hidden sm:flex relative flex-1 min-w-0 max-w-40">
+        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={filters.search}
           onChange={(e) => setFilter("search", e.target.value)}
-          placeholder="Search todos..."
-          className="pl-9 h-10"
+          placeholder="Search..."
+          className="pl-8 h-8 text-xs"
         />
       </div>
-
-      {/* Compact filter bar */}
-      <div className="flex items-center gap-2">
-        {/* Filter button */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 gap-2 text-xs"
-          onClick={() => setFilterSheetOpen(true)}
-        >
-          <SlidersHorizontal className="h-3.5 w-3.5" />
-          Filters
-          {activeFilterCount > 0 && (
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground font-bold">
-              {activeFilterCount}
-            </span>
-          )}
-        </Button>
-
-        {/* Sort button */}
-        <Select
-          value={`${filters.sortBy}:${filters.sortOrder}`}
-          onValueChange={(v) => {
-            const [sortBy, sortOrder] = v.split(":") as [
-              typeof filters.sortBy,
-              typeof filters.sortOrder,
-            ];
-            setFilter("sortBy", sortBy);
-            setFilter("sortOrder", sortOrder);
-          }}
-        >
-          <SelectTrigger className="h-8 w-auto gap-1.5 text-xs px-3 border rounded-md">
-            <ArrowUpDown className="h-3 w-3" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="created_at:desc">Newest</SelectItem>
-            <SelectItem value="created_at:asc">Oldest</SelectItem>
-            <SelectItem value="due_date:asc">Due soonest</SelectItem>
-            <SelectItem value="due_date:desc">Due latest</SelectItem>
-            <SelectItem value="priority:desc">Priority ↑</SelectItem>
-            <SelectItem value="priority:asc">Priority ↓</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Reset — only when filters active */}
-        {hasActiveFilters && (
+      {/* Mobile: icon button → expands inline */}
+      <div className="flex sm:hidden items-center">
+        {searchOpen ? (
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              ref={searchRef}
+              value={filters.search}
+              onChange={(e) => setFilter("search", e.target.value)}
+              placeholder="Search..."
+              className="pl-8 h-8 text-xs w-36"
+              onBlur={() => { if (!filters.search) setSearchOpen(false); }}
+            />
+          </div>
+        ) : (
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 gap-1.5 text-xs text-muted-foreground"
-            onClick={resetFilters}
+            className="h-8 w-8 p-0"
+            onClick={() => setSearchOpen(true)}
           >
-            <RotateCcw className="h-3 w-3" />
-            Reset
+            <Search className="h-3.5 w-3.5" />
           </Button>
         )}
       </div>
+
+      {/* Filter button */}
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-8 gap-1.5 text-xs shrink-0"
+        onClick={() => setFilterSheetOpen(true)}
+      >
+        <SlidersHorizontal className="h-3.5 w-3.5" />
+        <span className="hidden sm:inline">Filters</span>
+        {activeFilterCount > 0 && (
+          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground font-bold">
+            {activeFilterCount}
+          </span>
+        )}
+      </Button>
+
+      {/* Sort */}
+      <Select
+        value={`${filters.sortBy}:${filters.sortOrder}`}
+        onValueChange={(v) => {
+          const [sortBy, sortOrder] = v.split(":") as [
+            typeof filters.sortBy,
+            typeof filters.sortOrder,
+          ];
+          setFilter("sortBy", sortBy);
+          setFilter("sortOrder", sortOrder);
+        }}
+      >
+        <SelectTrigger className="h-8 w-auto gap-1.5 text-xs px-3 border rounded-md shrink-0">
+          <ArrowUpDown className="h-3 w-3" />
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="created_at:desc">Newest</SelectItem>
+          <SelectItem value="created_at:asc">Oldest</SelectItem>
+          <SelectItem value="due_date:asc">Due soonest</SelectItem>
+          <SelectItem value="due_date:desc">Due latest</SelectItem>
+          <SelectItem value="priority:desc">Priority ↑</SelectItem>
+          <SelectItem value="priority:asc">Priority ↓</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* Reset */}
+      {hasActiveFilters && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 gap-1.5 text-xs text-muted-foreground shrink-0"
+          onClick={resetFilters}
+        >
+          <RotateCcw className="h-3 w-3" />
+        </Button>
+      )}
 
       {/* Filter Sheet */}
       <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>

@@ -18,9 +18,10 @@ export async function GET(request: NextRequest) {
   const start = searchParams.get("start");
   const end = searchParams.get("end");
 
+  // Overlap query: event starts before range end AND event ends after range start
   let query = supabase.from("family_events").select("*").order("start_at");
-  if (start) query = query.gte("start_at", start);
-  if (end) query = query.lte("start_at", end);
+  if (end) query = query.lt("start_at", end);
+  if (start) query = query.gt("end_at", start);
 
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -49,6 +50,10 @@ export async function POST(request: NextRequest) {
 
   if (!body.title || !body.start_at || !body.end_at) {
     return NextResponse.json({ error: "title, start_at, end_at required" }, { status: 400 });
+  }
+
+  if (new Date(body.end_at) <= new Date(body.start_at)) {
+    return NextResponse.json({ error: "end_at must be after start_at" }, { status: 400 });
   }
 
   // Create the family event record first

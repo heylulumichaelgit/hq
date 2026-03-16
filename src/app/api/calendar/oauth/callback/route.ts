@@ -90,9 +90,13 @@ export async function GET(request: NextRequest) {
   }));
 
   if (selections.length > 0) {
-    await supabase
+    const { error: selError } = await supabase
       .from("google_calendar_selections")
       .upsert(selections, { onConflict: "user_id,calendar_id" });
+    if (selError) {
+      console.error("Failed to populate calendar selections:", selError);
+      return NextResponse.redirect(`${APP_URL}/calendar?error=selections_failed`);
+    }
   }
 
   return NextResponse.redirect(`${APP_URL}/calendar?connected=true`);

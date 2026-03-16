@@ -73,13 +73,15 @@ export function EventFormDialog({ defaultDate, trigger }: EventFormDialogProps) 
 
     const data = result.data;
 
+    // For timed events, build a local datetime string and convert to ISO via Date
+    // so the stored timestamp includes the correct UTC offset.
     const start_at = data.all_day
       ? `${data.start_date}T00:00:00.000Z`
-      : `${data.start_date}T${data.start_time ?? "00:00"}:00`;
+      : new Date(`${data.start_date}T${data.start_time ?? "00:00"}:00`).toISOString();
 
     const end_at = data.all_day
       ? `${data.end_date}T23:59:59.000Z`
-      : `${data.end_date}T${data.end_time ?? "01:00"}:00`;
+      : new Date(`${data.end_date}T${data.end_time ?? "10:00"}:00`).toISOString();
 
     try {
       await createEvent.mutateAsync({
