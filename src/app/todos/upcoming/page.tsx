@@ -1,13 +1,12 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { useTodos } from "@/features/todos/queries";
-import { useProjects } from "@/features/projects/queries";
 import { TodoItem } from "@/features/todos/components/todo-item";
 import { useAllTodoLabels } from "@/features/labels/queries";
 import { useCommentCounts } from "@/features/comments/queries";
 import { motion, AnimatePresence } from "framer-motion";
 import { addDays, format, isToday, startOfDay, isSameDay } from "date-fns";
-import { useMemo, useState } from "react";
 import { CalendarDays, ChevronDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Todo } from "@/lib/supabase/types";
@@ -16,19 +15,19 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { useHeaderSlot } from "@/components/layout/header-slot-context";
 
 export default function UpcomingPage() {
   const { data: todos, isLoading } = useTodos();
-  const { data: projects = [] } = useProjects();
   const todoLabelsMap = useAllTodoLabels();
   const commentCounts = useCommentCounts();
+  const { setSlot } = useHeaderSlot();
 
   const days = useMemo(
     () => Array.from({ length: 14 }, (_, i) => addDays(startOfDay(new Date()), i)),
     []
   );
 
-  // Map of day key -> todos for that day
   const groupedByDay = useMemo(() => {
     if (!todos) return new Map<string, Todo[]>();
 
@@ -52,7 +51,6 @@ export default function UpcomingPage() {
     return map;
   }, [todos, days]);
 
-  // Track collapsed state — default all open (collapsed set is empty)
   const [collapsedDays, setCollapsedDays] = useState<Set<string>>(new Set());
 
   const toggleDay = (key: string) => {
@@ -73,6 +71,17 @@ export default function UpcomingPage() {
     0
   );
 
+  useEffect(() => {
+    setSlot(
+      <>
+        <span className="text-sm font-semibold shrink-0">Upcoming</span>
+        <span className="text-xs text-muted-foreground shrink-0">Next 14 days</span>
+        <div className="flex-1" />
+      </>
+    );
+    return () => setSlot(null);
+  }, [setSlot]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -87,18 +96,6 @@ export default function UpcomingPage() {
       animate={{ opacity: 1 }}
       className="space-y-6"
     >
-      {/* Page header */}
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-          <CalendarDays className="h-5 w-5 text-muted-foreground" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold">Upcoming</h1>
-          <p className="text-sm text-muted-foreground">Next 14 days</p>
-        </div>
-      </div>
-
-      {/* Empty state */}
       {totalCount === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted/60">
@@ -113,7 +110,6 @@ export default function UpcomingPage() {
         </div>
       )}
 
-      {/* Day groups */}
       {days.map((day) => {
         const key = format(day, "yyyy-MM-dd");
         const dayTodos = groupedByDay.get(key);
@@ -141,9 +137,7 @@ export default function UpcomingPage() {
               <span
                 className={cn(
                   "font-semibold",
-                  isToday(day)
-                    ? "text-primary"
-                    : "text-muted-foreground"
+                  isToday(day) ? "text-primary" : "text-muted-foreground"
                 )}
               >
                 {label}

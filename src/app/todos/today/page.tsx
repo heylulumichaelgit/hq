@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useTodos } from "@/features/todos/queries";
 import { useProjects } from "@/features/projects/queries";
 import { TodoItem } from "@/features/todos/components/todo-item";
@@ -9,7 +10,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { isToday, isPast, startOfDay } from "date-fns";
 import { useMemo } from "react";
 import { AlertTriangle, CheckCircle2, Loader2, Sun } from "lucide-react";
-import { cn } from "@/lib/utils";
 import type { Todo } from "@/lib/supabase/types";
 import {
   Collapsible,
@@ -17,17 +17,26 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
+import { useHeaderSlot } from "@/components/layout/header-slot-context";
+
+function formatDuration(mins: number): string {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h === 0) return `~${m}m`;
+  if (m === 0) return `~${h}h`;
+  return `~${h}h ${m}m`;
+}
 
 export default function TodayPage() {
   const { data: todos, isLoading } = useTodos();
   const { data: projects = [] } = useProjects();
   const todoLabelsMap = useAllTodoLabels();
   const commentCounts = useCommentCounts();
+  const { setSlot } = useHeaderSlot();
 
   const { overdue, todayByProject, totalCount, doneCount, totalMinutes } = useMemo(() => {
     if (!todos) return { overdue: [], todayByProject: new Map(), totalCount: 0, doneCount: 0, totalMinutes: 0 };
 
-    // Only top-level todos
     const topLevel = todos.filter((t) => !t.parent_id);
 
     const overdue: Todo[] = [];
@@ -43,7 +52,6 @@ export default function TodayPage() {
       }
     }
 
-    // Group today's todos by project
     const byProject = new Map<string | null, Todo[]>();
     for (const t of todayTodos) {
       const key = t.project_id;
@@ -65,13 +73,24 @@ export default function TodayPage() {
     };
   }, [todos]);
 
-  function formatDuration(mins: number): string {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    if (h === 0) return `~${m}m`;
-    if (m === 0) return `~${h}h`;
-    return `~${h}h ${m}m`;
-  }
+  useEffect(() => {
+    setSlot(
+      <>
+        <span className="text-sm font-semibold shrink-0">Today</span>
+        <span className="text-xs text-muted-foreground shrink-0">
+          {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+        </span>
+        <div className="flex-1" />
+        {totalCount > 0 && (
+          <span className="text-xs text-muted-foreground shrink-0">
+            {doneCount}/{totalCount} done
+            {totalMinutes > 0 && ` · ${formatDuration(totalMinutes)}`}
+          </span>
+        )}
+      </>
+    );
+    return () => setSlot(null);
+  }, [setSlot, totalCount, doneCount, totalMinutes]);
 
   const allTodos = todos ?? [];
   const allDone = totalCount > 0 && doneCount === totalCount;
@@ -90,26 +109,6 @@ export default function TodayPage() {
       animate={{ opacity: 1 }}
       className="space-y-6"
     >
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Today</h1>
-          <p className="text-sm text-muted-foreground">
-            {new Date().toLocaleDateString("en-GB", {
-              weekday: "long",
-              day: "numeric",
-              month: "long",
-            })}
-          </p>
-        </div>
-        {totalCount > 0 && (
-          <span className="text-sm text-muted-foreground">
-            {doneCount}/{totalCount} done
-            {totalMinutes > 0 && ` · ${formatDuration(totalMinutes)}`}
-          </span>
-        )}
-      </div>
-
-      {/* Family Zero state */}
       <AnimatePresence>
         {allDone && (
           <motion.div
@@ -144,7 +143,6 @@ export default function TodayPage() {
         </div>
       )}
 
-      {/* Overdue section */}
       {overdue.length > 0 && (
         <div className="space-y-1">
           <div className="flex items-center gap-2 px-1 py-2 text-xs font-semibold uppercase tracking-wider text-amber-800 dark:text-foreground/50">
@@ -160,7 +158,6 @@ export default function TodayPage() {
         </div>
       )}
 
-      {/* Today by project */}
       {Array.from(todayByProject.entries()).map(([projectId, projectTodos]) => {
         const project = projects.find((p) => p.id === projectId);
         const label = project?.name ?? "Inbox";

@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { BarChart2, Loader2, TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import { startOfWeek, subWeeks, isSameWeek, format } from "date-fns";
 import { useTodos } from "@/features/todos/queries";
+import { useHeaderSlot } from "@/components/layout/header-slot-context";
 import type { Todo } from "@/lib/supabase/types";
 
 const PEOPLE = ["Andrew", "Chrystalla", "Lulu"] as const;
@@ -63,13 +64,18 @@ const cardVariants = {
 };
 
 export default function StatsPage() {
-  const { data: todos, isLoading } = useTodos();
+  const { data: todos } = useTodos();
+  const { setSlot } = useHeaderSlot();
+
+  useEffect(() => {
+    setSlot(<span className="text-sm font-semibold">Stats</span>);
+    return () => setSlot(null);
+  }, [setSlot]);
 
   const now = new Date();
   const thisWeekStart = startOfWeek(now, { weekStartsOn: 1 });
   const lastWeekStart = subWeeks(thisWeekStart, 1);
 
-  // Last 4 complete weeks (before this week)
   const fourWeeks = useMemo(() => {
     return [3, 2, 1, 0].map((weeksAgo) => subWeeks(thisWeekStart, weeksAgo));
   }, [thisWeekStart]);
@@ -108,30 +114,9 @@ export default function StatsPage() {
     });
   }, [todos, thisWeekStart, lastWeekStart]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="flex items-center gap-3 mb-2"
-      >
-        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-          <BarChart2 className="w-5 h-5 text-muted-foreground" />
-        </div>
-        <h1 className="text-2xl font-bold tracking-tight">Stats</h1>
-      </motion.div>
-
-      {/* 1. Family Karma Leaderboard */}
+    <div className="space-y-6">
+      {/* Family Karma Leaderboard */}
       <motion.div
         custom={0}
         variants={cardVariants}
@@ -139,7 +124,7 @@ export default function StatsPage() {
         animate="visible"
         className="rounded-2xl border bg-card p-5 shadow-sm"
       >
-        <h2 className="text-base font-semibold mb-4 text-muted-foreground uppercase tracking-wide text-xs">
+        <h2 className="text-xs font-semibold mb-4 text-muted-foreground uppercase tracking-wide">
           Family Karma Leaderboard
         </h2>
         <div className="space-y-3">
@@ -169,7 +154,6 @@ export default function StatsPage() {
                       {score % 1 === 0 ? score : score.toFixed(1)} done
                     </span>
                   </div>
-                  {/* Progress bar relative to #1 */}
                   <div className="mt-1.5 h-1.5 rounded-full bg-muted overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all"
@@ -186,7 +170,7 @@ export default function StatsPage() {
         </div>
       </motion.div>
 
-      {/* 2. Weekly Completion Bar Chart */}
+      {/* Weekly Completion Bar Chart */}
       <motion.div
         custom={1}
         variants={cardVariants}
@@ -194,22 +178,19 @@ export default function StatsPage() {
         animate="visible"
         className="rounded-2xl border bg-card p-5 shadow-sm"
       >
-        <h2 className="text-base font-semibold mb-1 text-muted-foreground uppercase tracking-wide text-xs">
+        <h2 className="text-xs font-semibold mb-1 text-muted-foreground uppercase tracking-wide">
           Weekly Completion
         </h2>
         <p className="text-xs text-muted-foreground mb-4">Last 4 weeks</p>
 
-        {/* Chart */}
         <div className="flex items-end gap-4 justify-center" style={{ height: 160 }}>
           {weeklyData.map(({ weekStart, perPerson, total }) => {
             const barHeight = maxWeekTotal > 0 ? (total / maxWeekTotal) * 120 : 0;
             return (
               <div key={weekStart.toISOString()} className="flex flex-col items-center gap-1 flex-1">
-                {/* Total label above bar */}
                 <span className="text-xs font-semibold tabular-nums text-foreground/70" style={{ minHeight: 16 }}>
                   {total > 0 ? (total % 1 === 0 ? total : total.toFixed(1)) : ""}
                 </span>
-                {/* Stacked bar */}
                 <div
                   className="w-full max-w-[40px] flex flex-col-reverse rounded-sm overflow-hidden"
                   style={{ height: 120, backgroundColor: "transparent" }}
@@ -235,7 +216,6 @@ export default function StatsPage() {
                       })}
                   </div>
                 </div>
-                {/* Week label */}
                 <span className="text-xs text-muted-foreground mt-1">
                   {format(weekStart, "MMM d")}
                 </span>
@@ -244,7 +224,6 @@ export default function StatsPage() {
           })}
         </div>
 
-        {/* Legend */}
         <div className="flex items-center gap-4 mt-4 justify-center flex-wrap">
           {PEOPLE.map((person) => (
             <div key={person} className="flex items-center gap-1.5">
@@ -258,7 +237,7 @@ export default function StatsPage() {
         </div>
       </motion.div>
 
-      {/* 3. Streaks / This Week vs Last Week */}
+      {/* This Week vs Last Week */}
       <motion.div
         custom={2}
         variants={cardVariants}

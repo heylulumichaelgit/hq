@@ -1,19 +1,20 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTodos } from "@/features/todos/queries";
 import { TodoItem } from "@/features/todos/components/todo-item";
 import { useAllTodoLabels } from "@/features/labels/queries";
 import { useCommentCounts } from "@/features/comments/queries";
 import { motion, AnimatePresence } from "framer-motion";
 import { startOfWeek, isSameWeek, format, startOfDay } from "date-fns";
-import { ChevronDown, Loader2, Trophy, Archive } from "lucide-react";
+import { ChevronDown, Loader2, Trophy } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import type { Todo } from "@/lib/supabase/types";
+import { useHeaderSlot } from "@/components/layout/header-slot-context";
 
 type PersonFilter = "All" | "Andrew" | "Chrystalla" | "Lulu";
 
@@ -36,6 +37,7 @@ export default function CompletedPage() {
   const [activeFilter, setActiveFilter] = useState<PersonFilter>("All");
   const todoLabelsMap = useAllTodoLabels();
   const commentCounts = useCommentCounts();
+  const { setSlot } = useHeaderSlot();
 
   const { completedTodos, weekGroups } = useMemo(() => {
     if (!todos) return { completedTodos: [], weekGroups: [] };
@@ -52,7 +54,6 @@ export default function CompletedPage() {
             return people.includes(activeFilter);
           });
 
-    // Group by week start (Monday)
     const weekMap = new Map<number, Todo[]>();
     for (const t of filtered) {
       const weekStart = startOfWeek(new Date(t.completed_at ?? t.updated_at), { weekStartsOn: 1 });
@@ -61,7 +62,6 @@ export default function CompletedPage() {
       weekMap.get(key)!.push(t);
     }
 
-    // Sort weeks newest first
     const sortedWeeks = Array.from(weekMap.entries()).sort(([a], [b]) => b - a);
 
     return {
@@ -72,6 +72,31 @@ export default function CompletedPage() {
       })),
     };
   }, [todos, activeFilter]);
+
+  useEffect(() => {
+    setSlot(
+      <>
+        <span className="text-sm font-semibold shrink-0">Completed</span>
+        <div className="flex-1" />
+        <div className="flex items-center rounded-md border p-0.5 text-xs shrink-0">
+          {PERSON_FILTERS.map((person) => (
+            <button
+              key={person}
+              onClick={() => setActiveFilter(person)}
+              className={`rounded px-2.5 py-1 transition-colors ${
+                activeFilter === person
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {person}
+            </button>
+          ))}
+        </div>
+      </>
+    );
+    return () => setSlot(null);
+  }, [setSlot, activeFilter]);
 
   const allTodos = todos ?? [];
   const now = startOfDay(new Date());
@@ -90,33 +115,6 @@ export default function CompletedPage() {
       animate={{ opacity: 1 }}
       className="space-y-6"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Completed</h1>
-        <p className="text-sm text-muted-foreground">
-          {completedTodos.length}{" "}
-          {completedTodos.length === 1 ? "task" : "tasks"}
-        </p>
-      </div>
-
-      {/* Person filter tabs */}
-      <div className="flex flex-wrap gap-1.5">
-        {PERSON_FILTERS.map((person) => (
-          <button
-            key={person}
-            onClick={() => setActiveFilter(person)}
-            className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-              activeFilter === person
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            }`}
-          >
-            {person}
-          </button>
-        ))}
-      </div>
-
-      {/* Empty state */}
       {completedTodos.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Trophy className="h-12 w-12 text-muted-foreground/30" />
@@ -126,7 +124,6 @@ export default function CompletedPage() {
         </div>
       )}
 
-      {/* Week groups */}
       {weekGroups.map(({ weekStart, weekTodos }) => {
         const label = getWeekLabel(weekStart, now);
         const personBreakdown = (["Andrew", "Chrystalla", "Lulu"] as const)
