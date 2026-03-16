@@ -45,7 +45,7 @@ function SectionHeader({
         "flex w-full items-center gap-2 px-1 py-2 text-xs font-semibold uppercase tracking-wider",
         "hover:bg-accent/50 rounded transition-colors cursor-pointer",
         variant === "overdue"
-          ? "text-amber-800 dark:text-amber-400"
+          ? "text-amber-800 dark:text-foreground/50"
           : variant === "unsectioned"
           ? "text-muted-foreground/50"
           : "text-muted-foreground"

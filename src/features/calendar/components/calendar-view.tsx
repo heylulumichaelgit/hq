@@ -28,9 +28,9 @@ const TOTAL_HOURS = HOUR_END - HOUR_START;
 const HOUR_HEIGHT = 64; // px per hour
 
 const TODO_PRIORITY_COLOR: Record<string, string> = {
-  high: "#EF4444",
-  medium: "#F59E0B",
-  low: "#6366F1",
+  high: "#C4956A",
+  medium: "#9B8E7E",
+  low: "#8B8680",
 };
 
 type DisplayEvent = {
@@ -84,7 +84,7 @@ function toDisplayTodo(t: Todo): DisplayEvent {
     start: day,
     end: day,
     allDay: true,
-    color: TODO_PRIORITY_COLOR[t.priority] ?? "#6366F1",
+    color: TODO_PRIORITY_COLOR[t.priority] ?? "#8B8680",
     source: "todo",
   };
 }

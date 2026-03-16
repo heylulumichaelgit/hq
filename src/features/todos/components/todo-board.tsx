@@ -30,13 +30,13 @@ import { Button } from "@/components/ui/button";
 
 const priorityBorder: Record<string, string> = {
   high: "border-l-destructive",
-  medium: "border-l-amber-700 dark:border-l-amber-500",
+  medium: "border-l-amber-700 dark:border-l-amber-300/40",
   low: "border-l-muted-foreground/30",
 };
 
 const priorityDot: Record<string, string> = {
   high: "bg-destructive",
-  medium: "bg-amber-700 dark:bg-amber-500",
+  medium: "bg-amber-700 dark:bg-amber-300/40",
   low: "bg-muted-foreground/30",
 };
 
