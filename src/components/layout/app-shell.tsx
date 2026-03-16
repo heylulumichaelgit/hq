@@ -63,9 +63,8 @@ function PullToRefreshIndicator({
 export function AppShell({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
-  const handleRefresh = useCallback(() => {
-    queryClient.invalidateQueries();
-    window.location.reload();
+  const handleRefresh = useCallback(async () => {
+    await queryClient.refetchQueries({ type: "active" });
   }, [queryClient]);
 
   const { pullDistance, refreshing } = usePullToRefresh(handleRefresh);

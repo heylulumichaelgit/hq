@@ -5,11 +5,12 @@ import { useEffect, useRef, useState } from "react";
 const THRESHOLD = 80; // px to pull before triggering
 const MAX_PULL = 120; // px cap on visual drag
 
-export function usePullToRefresh(onRefresh: () => void) {
+export function usePullToRefresh(onRefresh: () => Promise<void>) {
   const [pullDistance, setPullDistance] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const startYRef = useRef<number | null>(null);
   const pullingRef = useRef(false);
+  const refreshingRef = useRef(false);
 
   useEffect(() => {
     const onTouchStart = (e: TouchEvent) => {
@@ -38,15 +39,20 @@ export function usePullToRefresh(onRefresh: () => void) {
       if (delta > 5) e.preventDefault();
     };
 
-    const onTouchEnd = () => {
+    const onTouchEnd = async () => {
       if (!pullingRef.current) return;
-      if (pullDistance >= THRESHOLD) {
+      if (pullDistance >= THRESHOLD && !refreshingRef.current) {
+        refreshingRef.current = true;
         setRefreshing(true);
         setPullDistance(0);
-        // Small delay so the spinner is visible before reload
-        setTimeout(() => {
-          onRefresh();
-        }, 400);
+        // Small delay so the spinner is visible before fetching
+        await new Promise((r) => setTimeout(r, 400));
+        try {
+          await onRefresh();
+        } finally {
+          setRefreshing(false);
+          refreshingRef.current = false;
+        }
       } else {
         setPullDistance(0);
       }
