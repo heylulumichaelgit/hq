@@ -5,6 +5,7 @@ import { QueryProvider } from "@/providers/query-provider";
 import { AuthProvider } from "@/features/auth/auth-provider";
 import { ServiceWorkerRegister } from "@/components/sw-register";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const fontSans = Inter({
@@ -60,6 +61,7 @@ export default function RootLayout({
                 {children}
               </TooltipProvider>
               <ServiceWorkerRegister />
+              <Toaster position="bottom-right" richColors closeButton />
             </AuthProvider>
           </QueryProvider>
         </ThemeProvider>

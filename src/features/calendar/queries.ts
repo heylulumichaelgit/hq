@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -151,7 +152,9 @@ export function useCreateFamilyEvent() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["family-events"] });
+      toast.success("Event created");
     },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to create event"),
   });
 }
 
@@ -166,7 +169,9 @@ export function useDeleteFamilyEvent() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["family-events"] });
+      toast.success("Event deleted");
     },
+    onError: () => toast.error("Failed to delete event"),
   });
 }
 
@@ -185,6 +190,8 @@ export function useDisconnectGoogle() {
       queryClient.invalidateQueries({ queryKey: ["calendar-status"] });
       queryClient.invalidateQueries({ queryKey: ["calendar-selections"] });
       queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
+      toast.success("Google Calendar disconnected");
     },
+    onError: () => toast.error("Failed to disconnect Google Calendar"),
   });
 }

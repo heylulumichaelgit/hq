@@ -292,7 +292,45 @@ export interface Database {
           updated_at?: string;
         };
       };
-    };
+      grocery_items: {
+        Row: {
+          id: string;
+          name: string;
+          category: string;
+          quantity: number | null;
+          unit: string | null;
+          is_checked: boolean;
+          added_by: string | null;
+          position: number;
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          category?: string;
+          quantity?: number | null;
+          unit?: string | null;
+          is_checked?: boolean;
+          added_by?: string | null;
+          position?: number;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          category?: string;
+          quantity?: number | null;
+          unit?: string | null;
+          is_checked?: boolean;
+          added_by?: string | null;
+          position?: number;
+          notes?: string | null;
+          created_at?: string;
+        };
+      };
+    };  // end Tables
     Views: Record<string, never>;
     Functions: Record<string, never>;
     Enums: {
@@ -318,3 +356,6 @@ export type GoogleCalendarToken = Database["public"]["Tables"]["google_calendar_
 export type GoogleCalendarSelection = Database["public"]["Tables"]["google_calendar_selections"]["Row"];
 export type FamilyEvent = Database["public"]["Tables"]["family_events"]["Row"];
 export type FamilyEventInsert = Database["public"]["Tables"]["family_events"]["Insert"];
+export type GroceryItem = Database["public"]["Tables"]["grocery_items"]["Row"];
+export type GroceryItemInsert = Database["public"]["Tables"]["grocery_items"]["Insert"];
+export type GroceryItemUpdate = Database["public"]["Tables"]["grocery_items"]["Update"];

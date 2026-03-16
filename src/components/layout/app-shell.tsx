@@ -13,6 +13,10 @@ import {
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { Loader2 } from "lucide-react";
 import { HeaderSlotProvider, useHeaderSlot } from "./header-slot-context";
+import { CommandPalette } from "@/components/command-palette";
+import { useCommandStore } from "@/lib/command-store";
+import { TodoFormDialog } from "@/features/todos/components/todo-form-dialog";
+import { EventFormDialog } from "@/features/calendar/components/event-form-dialog";
 
 function SiteHeader() {
   const { slot } = useHeaderSlot();
@@ -23,6 +27,23 @@ function SiteHeader() {
         {slot && <div className="flex flex-1 items-center gap-3 min-w-0">{slot}</div>}
       </div>
     </header>
+  );
+}
+
+function GlobalForms() {
+  const { todoFormOpen, setTodoFormOpen, eventFormOpen, setEventFormOpen } =
+    useCommandStore();
+  return (
+    <>
+      <TodoFormDialog
+        open={todoFormOpen}
+        onOpenChange={setTodoFormOpen}
+      />
+      <EventFormDialog
+        open={eventFormOpen}
+        onOpenChange={setEventFormOpen}
+      />
+    </>
   );
 }
 
@@ -89,6 +110,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         </SidebarInset>
         <BottomNav />
       </SidebarProvider>
+      <CommandPalette />
+      <GlobalForms />
     </HeaderSlotProvider>
   );
 }

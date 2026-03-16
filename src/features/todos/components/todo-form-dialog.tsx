@@ -35,10 +35,15 @@ interface TodoFormDialogProps {
   trigger?: React.ReactNode;
   defaultProjectId?: string | null;
   defaultSection?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection }: TodoFormDialogProps) {
-  const [open, setOpen] = useState(false);
+export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection, open: controlledOpen, onOpenChange }: TodoFormDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? (v: boolean) => onOpenChange?.(v) : setInternalOpen;
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { user } = useAuthStore();
   const createTodo = useCreateTodo();

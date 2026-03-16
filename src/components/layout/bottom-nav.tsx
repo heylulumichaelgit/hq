@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Star, Inbox, Calendar, Menu } from "lucide-react";
+import { Star, Calendar, Menu, House } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
 
 const tabs = [
-  { href: "/todos/today", label: "Today", icon: Star },
-  { href: "/todos", label: "Inbox", icon: Inbox },
-  { href: "/calendar", label: "Calendar", icon: Calendar },
+  { href: "/", label: "Home", icon: House, exact: true },
+  { href: "/todos/today", label: "Today", icon: Star, exact: false },
+  { href: "/calendar", label: "Calendar", icon: Calendar, exact: false },
 ] as const;
 
 export function BottomNav() {
@@ -20,10 +20,9 @@ export function BottomNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur-sm md:hidden">
       <div className="flex items-stretch">
         {tabs.map((tab) => {
-          const isActive =
-            tab.href === "/todos"
-              ? pathname === "/todos"
-              : pathname.startsWith(tab.href);
+          const isActive = tab.exact
+            ? pathname === tab.href
+            : pathname.startsWith(tab.href);
           return (
             <Link
               key={tab.href}

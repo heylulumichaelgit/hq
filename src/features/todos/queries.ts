@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useEffect } from "react";
 import type { Todo, TodoInsert, TodoUpdate } from "@/lib/supabase/types";
 import { getNextDueDate } from "@/lib/recurrence";
+import { toast } from "sonner";
 
 const TODOS_KEY = ["todos"];
 
@@ -96,7 +97,9 @@ export function useCreateTodo() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODOS_KEY });
+      toast.success("Task created");
     },
+    onError: () => toast.error("Failed to create task"),
   });
 }
 
@@ -119,6 +122,7 @@ export function useUpdateTodo() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODOS_KEY });
     },
+    onError: () => toast.error("Failed to update task"),
   });
 }
 
@@ -134,7 +138,9 @@ export function useDeleteTodo() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODOS_KEY });
+      toast.success("Task deleted");
     },
+    onError: () => toast.error("Failed to delete task"),
   });
 }
 
@@ -178,9 +184,17 @@ export function useToggleTodo() {
       if (error) throw error;
       return data as Todo;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: TODOS_KEY });
+      if (variables.is_completed) {
+        if (variables.recurrence_rule) {
+          toast.success("Task rescheduled to next occurrence");
+        } else {
+          toast.success("Task completed");
+        }
+      }
     },
+    onError: () => toast.error("Failed to update task"),
   });
 }
 

@@ -21,10 +21,15 @@ import { format } from "date-fns";
 interface EventFormDialogProps {
   defaultDate?: Date;
   trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function EventFormDialog({ defaultDate, trigger }: EventFormDialogProps) {
-  const [open, setOpen] = useState(false);
+export function EventFormDialog({ defaultDate, trigger, open: controlledOpen, onOpenChange }: EventFormDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? (v: boolean) => onOpenChange?.(v) : setInternalOpen;
   const [errors, setErrors] = useState<Record<string, string>>({});
   const createEvent = useCreateFamilyEvent();
 

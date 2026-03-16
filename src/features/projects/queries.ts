@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect } from "react";
 import type { Project, ProjectInsert, ProjectUpdate } from "@/lib/supabase/types";
+import { toast } from "sonner";
 
 export const PROJECTS_KEY = ["projects"];
 
@@ -60,7 +61,9 @@ export function useCreateProject() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PROJECTS_KEY });
+      toast.success("Project created");
     },
+    onError: () => toast.error("Failed to create project"),
   });
 }
 
@@ -83,6 +86,7 @@ export function useUpdateProject() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PROJECTS_KEY });
     },
+    onError: () => toast.error("Failed to update project"),
   });
 }
 
@@ -97,6 +101,8 @@ export function useDeleteProject() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PROJECTS_KEY });
+      toast.success("Project deleted");
     },
+    onError: () => toast.error("Failed to delete project"),
   });
 }

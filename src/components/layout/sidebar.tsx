@@ -19,6 +19,9 @@ import {
   BarChart2,
   CirclePlus,
   MoreHorizontal,
+  House,
+  Users,
+  Receipt,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -61,6 +64,7 @@ import {
 } from "@/features/projects/queries";
 
 const navMain = [
+  { href: "/", label: "Home", icon: House },
   { href: "/todos/today", label: "Today", icon: Star },
   { href: "/todos", label: "Inbox", icon: Inbox },
   { href: "/todos/completed", label: "Completed", icon: CheckSquare },
@@ -72,8 +76,10 @@ const navBottom = [
 ];
 
 const navSecondary = [
-  { href: "/grocery", label: "Grocery List", icon: ShoppingCart },
-  { href: "/bookings", label: "Bookings", icon: Plane },
+  { href: "/grocery", label: "Grocery List", icon: ShoppingCart, soon: false },
+  { href: "/holidays", label: "Holidays", icon: Plane, soon: true },
+  { href: "/partners", label: "Partners", icon: Users, soon: true },
+  { href: "/expenses", label: "Expenses", icon: Receipt, soon: true },
 ];
 
 const PROJECT_COLORS = [
@@ -144,7 +150,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
-              <Link href="/todos">
+              <Link href="/">
                 <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-bold shrink-0">
                   M
                 </div>
@@ -177,8 +183,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenu>
               {navMain.map((item) => {
                 const isActive =
-                  item.href === "/todos"
-                    ? pathname === "/todos"
+                  item.href === "/" || item.href === "/todos"
+                    ? pathname === item.href
                     : pathname === item.href ||
                       pathname.startsWith(item.href + "/");
                 return (
@@ -364,15 +370,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </SidebarMenuItem>
                 );
               })}
-              {navSecondary.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton disabled className="opacity-50 cursor-not-allowed">
-                    <item.icon className="size-4" />
-                    <span>{item.label}</span>
-                    <span className="ml-auto text-[10px] text-muted-foreground">Soon</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {navSecondary.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    {item.soon ? (
+                      <SidebarMenuButton disabled className="opacity-50 cursor-not-allowed">
+                        <item.icon className="size-4" />
+                        <span>{item.label}</span>
+                        <span className="ml-auto text-[10px] text-muted-foreground">Soon</span>
+                      </SidebarMenuButton>
+                    ) : (
+                      <SidebarMenuButton asChild isActive={isActive} tooltip={item.label}>
+                        <Link href={item.href}>
+                          <item.icon className="size-4" />
+                          <span>{item.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    )}
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
