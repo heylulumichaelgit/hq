@@ -330,6 +330,176 @@ export interface Database {
           created_at?: string;
         };
       };
+      service_partners: {
+        Row: {
+          id: string;
+          name: string;
+          category: string;
+          phone: string | null;
+          email: string | null;
+          website: string | null;
+          address: string | null;
+          notes: string | null;
+          is_favourite: boolean;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          category?: string;
+          phone?: string | null;
+          email?: string | null;
+          website?: string | null;
+          address?: string | null;
+          notes?: string | null;
+          is_favourite?: boolean;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          category?: string;
+          phone?: string | null;
+          email?: string | null;
+          website?: string | null;
+          address?: string | null;
+          notes?: string | null;
+          is_favourite?: boolean;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      expenses: {
+        Row: {
+          id: string;
+          date: string;
+          amount: number | null;
+          currency: string;
+          description: string;
+          category: string;
+          receipt_url: string | null;
+          dropbox_path: string | null;
+          uploaded_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          date: string;
+          amount?: number | null;
+          currency?: string;
+          description: string;
+          category?: string;
+          receipt_url?: string | null;
+          dropbox_path?: string | null;
+          uploaded_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          date?: string;
+          amount?: number | null;
+          currency?: string;
+          description?: string;
+          category?: string;
+          receipt_url?: string | null;
+          dropbox_path?: string | null;
+          uploaded_by?: string | null;
+          created_at?: string;
+        };
+      };
+      meal_plans: {
+        Row: {
+          id: string;
+          week_start: string;
+          day_of_week: number;
+          meal_type: string;
+          title: string;
+          notes: string | null;
+          recipe_url: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          week_start: string;
+          day_of_week: number;
+          meal_type: string;
+          title: string;
+          notes?: string | null;
+          recipe_url?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          week_start?: string;
+          day_of_week?: number;
+          meal_type?: string;
+          title?: string;
+          notes?: string | null;
+          recipe_url?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      holidays: {
+        Row: {
+          id: string;
+          title: string;
+          destination: string | null;
+          start_date: string | null;
+          end_date: string | null;
+          status: "planning" | "booked" | "completed" | "cancelled";
+          notes: string | null;
+          budget: number | null;
+          currency: string;
+          attendees: string | null;
+          booking_ref: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          destination?: string | null;
+          start_date?: string | null;
+          end_date?: string | null;
+          status?: "planning" | "booked" | "completed" | "cancelled";
+          notes?: string | null;
+          budget?: number | null;
+          currency?: string;
+          attendees?: string | null;
+          booking_ref?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          destination?: string | null;
+          start_date?: string | null;
+          end_date?: string | null;
+          status?: "planning" | "booked" | "completed" | "cancelled";
+          notes?: string | null;
+          budget?: number | null;
+          currency?: string;
+          attendees?: string | null;
+          booking_ref?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };  // end Tables
     Views: Record<string, never>;
     Functions: Record<string, never>;

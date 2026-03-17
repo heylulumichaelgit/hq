@@ -22,6 +22,7 @@ import {
   House,
   Users,
   Receipt,
+  UtensilsCrossed,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -77,9 +78,10 @@ const navBottom = [
 
 const navSecondary = [
   { href: "/grocery", label: "Grocery List", icon: ShoppingCart, soon: false },
-  { href: "/holidays", label: "Holidays", icon: Plane, soon: true },
-  { href: "/partners", label: "Partners", icon: Users, soon: true },
-  { href: "/expenses", label: "Expenses", icon: Receipt, soon: true },
+  { href: "/meals", label: "Meal Planner", icon: UtensilsCrossed, soon: false },
+  { href: "/holidays", label: "Holidays", icon: Plane, soon: false },
+  { href: "/partners", label: "Partners", icon: Users, soon: false },
+  { href: "/expenses", label: "Expenses", icon: Receipt, soon: false },
 ];
 
 const PROJECT_COLORS = [
