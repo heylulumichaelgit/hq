@@ -21,14 +21,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  useCreatePartner,
-  useUpdatePartner,
-  PARTNER_CATEGORIES,
+  useCreateService,
+  useUpdateService,
+  SERVICE_CATEGORIES,
 } from "../queries";
 import type { ServicePartner, ServicePartnerInsert } from "../queries";
 import { useAuthStore } from "@/features/auth/store";
 
-interface PartnerFormDialogProps {
+interface ServiceFormDialogProps {
   partner?: ServicePartner;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -45,12 +45,12 @@ const emptyForm = {
   notes: "",
 };
 
-export function PartnerFormDialog({
+export function ServiceFormDialog({
   partner,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   trigger,
-}: PartnerFormDialogProps) {
+}: ServiceFormDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
@@ -59,8 +59,8 @@ export function PartnerFormDialog({
     : setInternalOpen;
 
   const [form, setForm] = useState(emptyForm);
-  const createPartner = useCreatePartner();
-  const updatePartner = useUpdatePartner();
+  const createService = useCreateService();
+  const updateService = useUpdateService();
   const { user } = useAuthStore();
 
   const isEdit = !!partner;
@@ -100,15 +100,15 @@ export function PartnerFormDialog({
     };
 
     if (isEdit && partner) {
-      await updatePartner.mutateAsync({ id: partner.id, ...payload });
+      await updateService.mutateAsync({ id: partner.id, ...payload });
     } else {
-      await createPartner.mutateAsync(payload);
+      await createService.mutateAsync(payload);
     }
 
     setOpen(false);
   };
 
-  const isPending = createPartner.isPending || updatePartner.isPending;
+  const isPending = createService.isPending || updateService.isPending;
 
   return (
     <>
@@ -120,21 +120,21 @@ export function PartnerFormDialog({
       {!trigger && !isControlled && (
         <Button size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
           <Plus className="size-3.5" />
-          Add Partner
+          Add Service
         </Button>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{isEdit ? "Edit Partner" : "Add Service Partner"}</DialogTitle>
+            <DialogTitle>{isEdit ? "Edit Service" : "Add Service"}</DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="partner-name">Name *</Label>
+              <Label htmlFor="service-name">Name *</Label>
               <Input
-                id="partner-name"
+                id="service-name"
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 placeholder="e.g. John's Plumbing Co."
@@ -144,16 +144,16 @@ export function PartnerFormDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="partner-category">Category</Label>
+              <Label htmlFor="service-category">Category</Label>
               <Select
                 value={form.category}
                 onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}
               >
-                <SelectTrigger id="partner-category">
+                <SelectTrigger id="service-category">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PARTNER_CATEGORIES.map((cat) => (
+                  {SERVICE_CATEGORIES.map((cat) => (
                     <SelectItem key={cat} value={cat}>
                       {cat}
                     </SelectItem>
@@ -164,9 +164,9 @@ export function PartnerFormDialog({
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="partner-phone">Phone</Label>
+                <Label htmlFor="service-phone">Phone</Label>
                 <Input
-                  id="partner-phone"
+                  id="service-phone"
                   type="tel"
                   value={form.phone}
                   onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
@@ -174,9 +174,9 @@ export function PartnerFormDialog({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="partner-email">Email</Label>
+                <Label htmlFor="service-email">Email</Label>
                 <Input
-                  id="partner-email"
+                  id="service-email"
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
@@ -186,9 +186,9 @@ export function PartnerFormDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="partner-website">Website</Label>
+              <Label htmlFor="service-website">Website</Label>
               <Input
-                id="partner-website"
+                id="service-website"
                 type="url"
                 value={form.website}
                 onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))}
@@ -197,9 +197,9 @@ export function PartnerFormDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="partner-address">Address</Label>
+              <Label htmlFor="service-address">Address</Label>
               <Input
-                id="partner-address"
+                id="service-address"
                 value={form.address}
                 onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
                 placeholder="123 Main St, City"
@@ -207,9 +207,9 @@ export function PartnerFormDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="partner-notes">Notes</Label>
+              <Label htmlFor="service-notes">Notes</Label>
               <Textarea
-                id="partner-notes"
+                id="service-notes"
                 value={form.notes}
                 onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                 placeholder="Any useful notes about this contact..."
@@ -228,7 +228,7 @@ export function PartnerFormDialog({
                 Cancel
               </Button>
               <Button type="submit" disabled={!form.name.trim() || isPending}>
-                {isPending ? "Saving…" : isEdit ? "Save changes" : "Add Partner"}
+                {isPending ? "Saving…" : isEdit ? "Save changes" : "Add Service"}
               </Button>
             </DialogFooter>
           </form>

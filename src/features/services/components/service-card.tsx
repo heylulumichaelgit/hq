@@ -17,9 +17,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { useDeletePartner, useToggleFavourite } from "../queries";
+import { useDeleteService, useToggleFavourite } from "../queries";
 import type { ServicePartner } from "../queries";
-import { PartnerFormDialog } from "./partner-form-dialog";
+import { ServiceFormDialog } from "./service-form-dialog";
 
 const CATEGORY_COLORS: Record<string, string> = {
   Plumbing: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
@@ -35,12 +35,12 @@ const CATEGORY_COLORS: Record<string, string> = {
   Other: "bg-muted text-muted-foreground",
 };
 
-interface PartnerCardProps {
+interface ServiceCardProps {
   partner: ServicePartner;
 }
 
-export function PartnerCard({ partner }: PartnerCardProps) {
-  const deletePartner = useDeletePartner();
+export function ServiceCard({ partner }: ServiceCardProps) {
+  const deleteService = useDeleteService();
   const toggleFavourite = useToggleFavourite();
   const [editOpen, setEditOpen] = useState(false);
 
@@ -90,7 +90,7 @@ export function PartnerCard({ partner }: PartnerCardProps) {
                 size="icon"
                 className="size-7 text-muted-foreground"
                 onClick={() => setEditOpen(true)}
-                aria-label="Edit partner"
+                aria-label="Edit service"
               >
                 <Pencil className="size-3.5" />
               </Button>
@@ -101,14 +101,14 @@ export function PartnerCard({ partner }: PartnerCardProps) {
                     variant="ghost"
                     size="icon"
                     className="size-7 text-muted-foreground hover:text-destructive"
-                    aria-label="Delete partner"
+                    aria-label="Delete service"
                   >
                     <Trash2 className="size-3.5" />
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Remove partner?</AlertDialogTitle>
+                    <AlertDialogTitle>Remove service?</AlertDialogTitle>
                     <AlertDialogDescription>
                       This will permanently remove{" "}
                       <strong>{partner.name}</strong> from your directory. This
@@ -119,7 +119,7 @@ export function PartnerCard({ partner }: PartnerCardProps) {
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      onClick={() => deletePartner.mutate(partner.id)}
+                      onClick={() => deleteService.mutate(partner.id)}
                     >
                       Remove
                     </AlertDialogAction>
@@ -183,7 +183,7 @@ export function PartnerCard({ partner }: PartnerCardProps) {
         </CardContent>
       </Card>
 
-      <PartnerFormDialog
+      <ServiceFormDialog
         partner={partner}
         open={editOpen}
         onOpenChange={setEditOpen}

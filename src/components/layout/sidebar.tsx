@@ -80,7 +80,7 @@ const navSecondary = [
   { href: "/grocery", label: "Grocery List", icon: ShoppingCart, soon: false },
   { href: "/meals", label: "Meal Planner", icon: UtensilsCrossed, soon: false },
   { href: "/holidays", label: "Holidays", icon: Plane, soon: false },
-  { href: "/partners", label: "Partners", icon: Users, soon: false },
+  { href: "/services", label: "Services", icon: Users, soon: false },
   { href: "/expenses", label: "Expenses", icon: Receipt, soon: false },
 ];
 

@@ -23,9 +23,9 @@ export interface ServicePartner {
 export type ServicePartnerInsert = Omit<ServicePartner, "id" | "created_at" | "updated_at">;
 export type ServicePartnerUpdate = Partial<Omit<ServicePartner, "id" | "created_at" | "updated_at">>;
 
-export const PARTNERS_KEY = ["service_partners"];
+export const SERVICES_KEY = ["service_partners"];
 
-export const PARTNER_CATEGORIES = [
+export const SERVICE_CATEGORIES = [
   "Plumbing",
   "Electrical",
   "Painting",
@@ -39,20 +39,20 @@ export const PARTNER_CATEGORIES = [
   "Other",
 ] as const;
 
-export type PartnerCategory = (typeof PARTNER_CATEGORIES)[number];
+export type ServiceCategory = (typeof SERVICE_CATEGORIES)[number];
 
-export function usePartners() {
+export function useServices() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
-      .channel("partners-realtime")
+      .channel("services-realtime")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "service_partners" },
         () => {
-          queryClient.invalidateQueries({ queryKey: PARTNERS_KEY });
+          queryClient.invalidateQueries({ queryKey: SERVICES_KEY });
         }
       )
       .subscribe();
@@ -62,7 +62,7 @@ export function usePartners() {
   }, [queryClient]);
 
   return useQuery<ServicePartner[]>({
-    queryKey: PARTNERS_KEY,
+    queryKey: SERVICES_KEY,
     queryFn: async () => {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -76,7 +76,7 @@ export function usePartners() {
   });
 }
 
-export function useCreatePartner() {
+export function useCreateService() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (partner: ServicePartnerInsert) => {
@@ -90,14 +90,14 @@ export function useCreatePartner() {
       return data as ServicePartner;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: PARTNERS_KEY });
-      toast.success("Partner added");
+      queryClient.invalidateQueries({ queryKey: SERVICES_KEY });
+      toast.success("Service added");
     },
-    onError: () => toast.error("Failed to add partner"),
+    onError: () => toast.error("Failed to add service"),
   });
 }
 
-export function useUpdatePartner() {
+export function useUpdateService() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: ServicePartnerUpdate & { id: string }) => {
@@ -108,12 +108,12 @@ export function useUpdatePartner() {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: PARTNERS_KEY }),
-    onError: () => toast.error("Failed to update partner"),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: SERVICES_KEY }),
+    onError: () => toast.error("Failed to update service"),
   });
 }
 
-export function useDeletePartner() {
+export function useDeleteService() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
@@ -122,10 +122,10 @@ export function useDeletePartner() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: PARTNERS_KEY });
-      toast.success("Partner removed");
+      queryClient.invalidateQueries({ queryKey: SERVICES_KEY });
+      toast.success("Service removed");
     },
-    onError: () => toast.error("Failed to delete partner"),
+    onError: () => toast.error("Failed to delete service"),
   });
 }
 
@@ -140,7 +140,7 @@ export function useToggleFavourite() {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: PARTNERS_KEY }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: SERVICES_KEY }),
     onError: () => toast.error("Failed to update favourite"),
   });
 }

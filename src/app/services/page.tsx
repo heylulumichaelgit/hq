@@ -11,14 +11,14 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useHeaderSlot } from "@/components/layout/header-slot-context";
-import { usePartners, PARTNER_CATEGORIES } from "@/features/partners/queries";
-import type { ServicePartner } from "@/features/partners/queries";
-import { PartnerCard } from "@/features/partners/components/partner-card";
-import { PartnerFormDialog } from "@/features/partners/components/partner-form-dialog";
+import { useServices, SERVICE_CATEGORIES } from "@/features/services/queries";
+import type { ServicePartner } from "@/features/services/queries";
+import { ServiceCard } from "@/features/services/components/service-card";
+import { ServiceFormDialog } from "@/features/services/components/service-form-dialog";
 
-export default function PartnersPage() {
+export default function ServicesPage() {
   const { setSlot } = useHeaderSlot();
-  const { data: partners = [], isLoading } = usePartners();
+  const { data: services = [], isLoading } = useServices();
   const [search, setSearch] = useState("");
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
@@ -26,32 +26,32 @@ export default function PartnersPage() {
     setSlot(
       <div className="flex items-center gap-2">
         <Users className="size-4 text-muted-foreground shrink-0" />
-        <span className="text-sm font-semibold">Partners</span>
+        <span className="text-sm font-semibold">Services</span>
       </div>
     );
     return () => setSlot(null);
   }, [setSlot]);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return partners;
+    if (!search.trim()) return services;
     const q = search.toLowerCase();
-    return partners.filter(
+    return services.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
         p.category.toLowerCase().includes(q)
     );
-  }, [partners, search]);
+  }, [services, search]);
 
   const favourites = filtered.filter((p) => p.is_favourite);
 
   const byCategory = useMemo(() => {
     const map = new Map<string, ServicePartner[]>();
-    for (const cat of PARTNER_CATEGORIES) map.set(cat, []);
+    for (const cat of SERVICE_CATEGORIES) map.set(cat, []);
     for (const p of filtered) {
       if (!map.has(p.category)) map.set(p.category, []);
       map.get(p.category)!.push(p);
     }
-    return PARTNER_CATEGORIES.map((cat) => ({
+    return SERVICE_CATEGORIES.map((cat) => ({
       category: cat,
       items: map.get(cat) ?? [],
     })).filter((g) => g.items.length > 0);
@@ -83,30 +83,30 @@ export default function PartnersPage() {
             className="pl-8 h-9 text-sm"
           />
         </div>
-        <PartnerFormDialog />
+        <ServiceFormDialog />
       </div>
 
       {/* Empty state */}
-      {partners.length === 0 && (
+      {services.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <Building2 className="size-12 text-muted-foreground/30" />
           <p className="mt-4 text-base font-medium text-muted-foreground">
-            No service partners yet
+            No services yet
           </p>
           <p className="mt-1 text-sm text-muted-foreground max-w-xs">
             Add plumbers, doctors, cleaners and more to keep all your household contacts in one place.
           </p>
           <div className="mt-6">
-            <PartnerFormDialog />
+            <ServiceFormDialog />
           </div>
         </div>
       )}
 
       {/* No search results */}
-      {partners.length > 0 && filtered.length === 0 && (
+      {services.length > 0 && filtered.length === 0 && (
         <div className="py-12 text-center">
           <p className="text-sm text-muted-foreground">
-            No partners match &ldquo;{search}&rdquo;
+            No services match &ldquo;{search}&rdquo;
           </p>
         </div>
       )}
@@ -129,7 +129,7 @@ export default function PartnersPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {favourites.map((p) => (
-                <PartnerCard key={p.id} partner={p} />
+                <ServiceCard key={p.id} partner={p} />
               ))}
             </div>
           </motion.div>
@@ -141,7 +141,7 @@ export default function PartnersPage() {
         <div className="space-y-1">
           {favourites.length > 0 && (
             <p className="px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-              All partners
+              All services
             </p>
           )}
           {byCategory.map(({ category, items }) => {
@@ -164,7 +164,7 @@ export default function PartnersPage() {
                 <CollapsibleContent>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 pb-2 pl-1">
                     {items.map((p) => (
-                      <PartnerCard key={p.id} partner={p} />
+                      <ServiceCard key={p.id} partner={p} />
                     ))}
                   </div>
                 </CollapsibleContent>

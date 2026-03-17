@@ -97,7 +97,7 @@ const quickLinks = [
   { href: "/grocery", label: "Grocery", icon: ShoppingCart, enabled: true },
   { href: "/meals", label: "Meals", icon: UtensilsCrossed, enabled: true },
   { href: "/todos/stats", label: "Stats", icon: BarChart2, enabled: true },
-  { href: "/partners", label: "Partners", icon: Users, enabled: true },
+  { href: "/services", label: "Services", icon: Users, enabled: true },
   { href: "/holidays", label: "Holidays", icon: Plane, enabled: true },
   { href: "/expenses", label: "Expenses", icon: Receipt, enabled: true },
 ];
