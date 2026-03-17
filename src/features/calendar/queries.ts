@@ -96,6 +96,7 @@ export function useFamilyEvents(timeMin: string, timeMax: string) {
 export function useCalendarSelections() {
   return useQuery<CalendarSelection[]>({
     queryKey: ["calendar-selections"],
+    staleTime: 60_000,
     queryFn: async () => {
       const res = await fetch("/api/calendar/selections");
       if (!res.ok) throw new Error("Failed to fetch selections");

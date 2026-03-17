@@ -9,35 +9,6 @@ import { toast } from "sonner";
 
 const TODOS_KEY = ["todos"];
 
-function forceLogout() {
-  document.cookie.split(";").forEach((c) => {
-    const name = c.trim().split("=")[0];
-    if (name.startsWith("sb-")) {
-      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-    }
-  });
-  const supabase = createClient();
-  supabase.auth.signOut().catch(() => {});
-  window.location.href = "/login";
-}
-
-function isAuthError(error: unknown): boolean {
-  const msg =
-    error instanceof Error ? error.message.toLowerCase() : String(error);
-  return (
-    msg.includes("jwt expired") ||
-    msg.includes("invalid jwt") ||
-    msg.includes("refresh_token") ||
-    msg.includes("session_not_found") ||
-    msg.includes("not authenticated") ||
-    msg.includes("invalid claim") ||
-    msg.includes("token is expired") ||
-    msg.includes("token has expired") ||
-    msg.includes("user not found") ||
-    msg.includes("auth session missing")
-  );
-}
-
 export function useTodos() {
   const queryClient = useQueryClient();
 
@@ -72,7 +43,6 @@ export function useTodos() {
         .order("created_at", { ascending: false });
 
       if (error) {
-        if (isAuthError(error)) forceLogout();
         throw new Error(error.message);
       }
       return (data ?? []) as Todo[];

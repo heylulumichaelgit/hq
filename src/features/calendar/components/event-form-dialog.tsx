@@ -114,14 +114,16 @@ export function EventFormDialog({ defaultDate, trigger, open: controlledOpen, on
         if (v) resetForm();
       }}
     >
-      <DialogTrigger asChild>
-        {trigger ?? (
-          <Button className="h-9 gap-2">
-            <Plus className="h-4 w-4" />
-            <span>Add Event</span>
-          </Button>
-        )}
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          {trigger ?? (
+            <Button className="h-9 gap-2">
+              <Plus className="h-4 w-4" />
+              <span>Add Event</span>
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>New Family Event</DialogTitle>

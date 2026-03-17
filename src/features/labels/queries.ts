@@ -11,6 +11,7 @@ export const TODO_LABELS_KEY = ["todo_labels"];
 export function useLabels() {
   return useQuery<Label[]>({
     queryKey: LABELS_KEY,
+    staleTime: 60_000,
     queryFn: async () => {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -57,6 +58,7 @@ export function useAllTodoLabels() {
 
   const { data: rows = [] } = useQuery<{ todo_id: string; labels: Label }[]>({
     queryKey: TODO_LABELS_KEY,
+    staleTime: 30_000,
     queryFn: async () => {
       const supabase = createClient();
       const { data, error } = await supabase

@@ -11,9 +11,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const supabase = createClient();
-    const isAuthPage = AUTH_PAGES.some((p) =>
-      window.location.pathname.startsWith(p)
-    );
 
     const loadProfile = async (userId: string) => {
       const { data: profile } = await supabase
@@ -24,32 +21,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (profile) setProfile(profile);
     };
 
-    const initAuth = async () => {
-      try {
-        // getSession() reads from local cookies — no network call, no timeout risk.
-        // The Next.js middleware validates sessions cryptographically on every
-        // server request, so we don't need to call the Supabase auth server here.
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!session) {
-          if (!isAuthPage) window.location.href = "/login";
-          setLoading(false);
-          return;
-        }
-
-        setUser(session.user);
-        await loadProfile(session.user.id);
-      } catch {
-        // A network/profile error is NOT a reason to log the user out.
-        // The middleware will redirect unauthenticated requests server-side.
-      }
-      setLoading(false);
-    };
-
-    initAuth();
-
+    // onAuthStateChange fires INITIAL_SESSION synchronously on subscribe with the
+    // current session state — no need for a separate initAuth() that races it.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -57,11 +30,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(user);
 
       if (user) {
-        await loadProfile(user.id);
-      } else {
+        // Load profile only on meaningful events — TOKEN_REFRESHED fires hourly
+        // and the profile hasn't changed, so skip it to avoid extra DB load.
+        if (
+          event === "SIGNED_IN" ||
+          event === "INITIAL_SESSION" ||
+          event === "USER_UPDATED"
+        ) {
+          try {
+            await loadProfile(user.id);
+          } catch {
+            // Profile load failure is non-fatal; the user is still authenticated.
+          }
+        }
+      } else if (event === "SIGNED_OUT") {
+        // Redirect only on an intentional sign-out, not on transient token-refresh
+        // failures that temporarily yield a null session (avoids spurious logouts).
         setProfile(null);
-        // Re-check pathname at callback time, not at effect setup time (stale closure fix)
-        const onAuthPage = AUTH_PAGES.some((p) => window.location.pathname.startsWith(p));
+        const onAuthPage = AUTH_PAGES.some((p) =>
+          window.location.pathname.startsWith(p)
+        );
+        if (!onAuthPage) window.location.href = "/login";
+      } else if (event === "INITIAL_SESSION") {
+        // No session at startup → redirect to login
+        const onAuthPage = AUTH_PAGES.some((p) =>
+          window.location.pathname.startsWith(p)
+        );
         if (!onAuthPage) window.location.href = "/login";
       }
 

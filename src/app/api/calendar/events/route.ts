@@ -68,8 +68,9 @@ export async function GET(request: NextRequest) {
       return acc;
     }, {});
 
-  // Fetch events for each connected user
-  const allEvents = await Promise.all(
+  // Fetch events for each connected user — use allSettled so one user's bad
+  // token or revoked Google auth doesn't block the rest of the family's events.
+  const userResults = await Promise.allSettled(
     allTokens.map(async (token) => {
       const displayName = profileMap[token.user_id] ?? "Unknown";
       const userColor = USER_COLORS[displayName] ?? FALLBACK_COLOR;
@@ -112,6 +113,10 @@ export async function GET(request: NextRequest) {
       }));
     })
   );
+
+  const allEvents = userResults
+    .filter((r) => r.status === "fulfilled")
+    .map((r) => (r as PromiseFulfilledResult<typeof r extends PromiseFulfilledResult<infer V> ? V : never>).value);
 
   // Deduplicate by event ID — same event can appear for multiple users when they share a calendar
   const seen = new Set<string>();

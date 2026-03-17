@@ -34,6 +34,7 @@ export function useComments(todoId: string, enabled = true) {
   return useQuery<CommentWithProfile[]>({
     queryKey: COMMENTS_KEY(todoId),
     enabled,
+    staleTime: 15_000,
     queryFn: async () => {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -51,6 +52,7 @@ export function useComments(todoId: string, enabled = true) {
 export function useCommentCounts() {
   const { data = [] } = useQuery<{ todo_id: string }[]>({
     queryKey: COMMENT_COUNTS_KEY,
+    staleTime: 30_000,
     queryFn: async () => {
       const supabase = createClient();
       const { data, error } = await supabase

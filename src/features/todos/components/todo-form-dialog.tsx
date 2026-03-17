@@ -171,14 +171,16 @@ export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection
         if (v) resetForm();
       }}
     >
-      <DialogTrigger asChild>
-        {trigger ?? (
-          <Button className="h-9 gap-2">
-            <Plus className="h-5 w-5" />
-            <span>Add Todo</span>
-          </Button>
-        )}
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          {trigger ?? (
+            <Button className="h-9 gap-2">
+              <Plus className="h-5 w-5" />
+              <span>Add Todo</span>
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Edit Todo" : "New Todo"}</DialogTitle>

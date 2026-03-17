@@ -20,7 +20,8 @@ export async function POST(request: NextRequest) {
   }
 
   const DROPBOX_ACCESS_TOKEN = process.env.DROPBOX_ACCESS_TOKEN;
-  const DROPBOX_FOLDER_PATH = process.env.DROPBOX_FOLDER_PATH || "/HQ Expenses";
+  // Empty string = App folder root; otherwise a path like "/Consultan/Accounting"
+  const DROPBOX_FOLDER_PATH = process.env.DROPBOX_FOLDER_PATH ?? "";
 
   // If Dropbox is not configured, return a mock response
   if (!DROPBOX_ACCESS_TOKEN) {
@@ -33,13 +34,15 @@ export async function POST(request: NextRequest) {
 
   const now = new Date();
   const year = now.getFullYear().toString();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const monthNum = String(now.getMonth() + 1).padStart(2, "0");
+  const monthName = now.toLocaleString("en-GB", { month: "long" });
+  const monthFolder = `${monthNum}-${monthName}`; // e.g. "03-March"
 
   // Sanitize filename
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const timestamp = Date.now();
-  const filename = `${timestamp}_${safeName}`;
-  const dropboxPath = `${DROPBOX_FOLDER_PATH}/${year}/${month}/${filename}`;
+  const filename = `${timestamp}-${safeName}`;
+  const dropboxPath = `${DROPBOX_FOLDER_PATH}/${year}/${monthFolder}/Receipts/${filename}`;
 
   try {
     // Upload file to Dropbox
