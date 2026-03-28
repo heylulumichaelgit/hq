@@ -180,7 +180,24 @@
 
 /* Native app feel */
 html, body {
-  overscroll-behavior-y: none;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+  overflow-x: hidden;
+}
+
+/* Lock the viewport — prevent any horizontal scroll/bounce on iOS standalone */
+html {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 }
 

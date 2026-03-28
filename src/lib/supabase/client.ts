@@ -2,23 +2,11 @@
 
 import { createBrowserClient } from "@supabase/ssr";
 
-let client: ReturnType<typeof createBrowserClient> | null = null;
-
+// @supabase/ssr@0.8.0 already creates a singleton internally and sets
+// maxAge: 400 days on cookies by default. No overrides needed.
 export function createClient() {
-  if (client) return client;
-  client = createBrowserClient(
+  return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookieOptions: {
-        // iOS standalone PWA purges session cookies on app close.
-        // Setting maxAge ensures cookies persist across launches.
-        maxAge: 60 * 60 * 24 * 400, // 400 days (max allowed by browsers)
-        path: "/",
-        sameSite: "lax",
-        secure: true,
-      },
-    }
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
-  return client;
 }

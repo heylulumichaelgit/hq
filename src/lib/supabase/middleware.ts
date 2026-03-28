@@ -6,16 +6,7 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
-  let supabase;
-  try {
-    const cookieOptions = {
-      maxAge: 60 * 60 * 24 * 400, // 400 days — survive iOS standalone PWA close
-      path: "/",
-      sameSite: "lax" as const,
-      secure: true,
-    };
-
-    supabase = createServerClient(
+  const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -30,38 +21,23 @@ export async function updateSession(request: NextRequest) {
           supabaseResponse = NextResponse.next({
             request,
           });
+          // Pass cookie options through unmodified — @supabase/ssr@0.8.0
+          // already sets maxAge: 400 days. Previously we were overriding
+          // the library's maxAge: 0 (for chunk removal) which corrupted sessions.
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, {
-              ...cookieOptions,
-              ...options,
-            })
+            supabaseResponse.cookies.set(name, value, options)
           );
         },
       },
     }
   );
 
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error('Supabase client creation failed:', error.message);
-    } else {
-      console.error('Unknown error:', error);
-    }
-    console.error('URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-    console.error('ANON KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-    return NextResponse.json({ error: 'Supabase client creation failed' }, { status: 500 });
-  }
-
-  // IMPORTANT: getUser() validates the JWT server-side and — crucially —
-  // triggers a token refresh via setAll() if the access token has expired.
-  // We MUST use the response that contains the refreshed cookie values.
-  // Previously this was redirecting to /login when the access token was
-  // expired but the refresh token was still valid, causing spurious logouts.
-  const { data: { user }, error } = await supabase.auth.getUser();
+  // getUser() validates the JWT and triggers token refresh if expired.
+  // The refreshed tokens are written back via setAll → supabaseResponse cookies.
+  const { data: { user } } = await supabase.auth.getUser();
 
   if (
     !user &&
-    !error?.message?.includes("refresh_token") && // don't redirect on transient refresh failures
     !request.nextUrl.pathname.startsWith("/login") &&
     !request.nextUrl.pathname.startsWith("/auth") &&
     !request.nextUrl.pathname.startsWith("/forgot-password") &&
