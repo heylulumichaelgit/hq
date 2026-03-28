@@ -24,7 +24,7 @@ function useProfileNames() {
     queryFn: async () => {
       const supabase = createClient();
       const { data } = await supabase.from("profiles").select("id, display_name");
-      return Object.fromEntries((data ?? []).map((p) => [p.id, p.display_name]));
+      return Object.fromEntries((data ?? []).map((p: { id: string; display_name: string }) => [p.id, p.display_name]));
     },
     staleTime: 60_000 * 10,
   });

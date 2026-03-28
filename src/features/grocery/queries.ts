@@ -2,25 +2,19 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import { useEffect } from "react";
 import { toast } from "sonner";
 import type { GroceryItem, GroceryItemInsert, GroceryItemUpdate } from "@/lib/supabase/types";
+import { useRealtimeSync } from "@/hooks/use-realtime-sync";
 
 export const GROCERY_KEY = ["grocery_items"];
 
 export function useGroceryItems() {
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const supabase = createClient();
-    const channel = supabase
-      .channel("grocery-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "grocery_items" }, () => {
-        queryClient.invalidateQueries({ queryKey: GROCERY_KEY });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [queryClient]);
+  useRealtimeSync({
+    table: "grocery_items",
+    queryKey: GROCERY_KEY,
+    channelName: "grocery-realtime",
+    userIdColumn: "added_by",
+  });
 
   return useQuery<GroceryItem[]>({
     queryKey: GROCERY_KEY,

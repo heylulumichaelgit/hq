@@ -2,12 +2,12 @@
 
 import { useState, useMemo } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogTrigger,
+} from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -164,7 +164,7 @@ export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection
   );
 
   return (
-    <Dialog
+    <ResponsiveDialog
       open={open}
       onOpenChange={(v) => {
         setOpen(v);
@@ -172,19 +172,19 @@ export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection
       }}
     >
       {!isControlled && (
-        <DialogTrigger asChild>
+        <ResponsiveDialogTrigger asChild>
           {trigger ?? (
             <Button className="h-9 gap-2">
               <Plus className="h-5 w-5" />
               <span>Add Todo</span>
             </Button>
           )}
-        </DialogTrigger>
+        </ResponsiveDialogTrigger>
       )}
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Todo" : "New Todo"}</DialogTitle>
-        </DialogHeader>
+      <ResponsiveDialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>{isEditing ? "Edit Todo" : "New Todo"}</ResponsiveDialogTitle>
+        </ResponsiveDialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           <div className="space-y-2">
             <Label htmlFor="title">Title *</Label>
@@ -410,7 +410,7 @@ export function TodoFormDialog({ todo, trigger, defaultProjectId, defaultSection
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }

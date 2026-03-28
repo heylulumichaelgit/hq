@@ -17,6 +17,8 @@ import { CommandPalette } from "@/components/command-palette";
 import { useCommandStore } from "@/lib/command-store";
 import { TodoFormDialog } from "@/features/todos/components/todo-form-dialog";
 import { EventFormDialog } from "@/features/calendar/components/event-form-dialog";
+import { InstallPrompt } from "@/components/install-prompt";
+import { RouteProgress } from "@/components/route-progress";
 
 function SiteHeader() {
   const { slot } = useHeaderSlot();
@@ -61,11 +63,11 @@ function PullToRefreshIndicator({
 
   return (
     <div
-      className="fixed top-12 left-0 right-0 z-50 flex justify-center pointer-events-none md:hidden"
+      className="absolute top-0 left-0 right-0 z-50 flex justify-center pointer-events-none md:hidden"
       style={{
-        transform: `translateY(${refreshing ? 8 : pullDistance * 0.4}px)`,
+        transform: `translateY(${refreshing ? 8 : Math.max(pullDistance * 0.3 - 8, 0)}px)`,
         opacity: refreshing ? 1 : progress,
-        transition: refreshing ? "transform 0.2s ease" : undefined,
+        transition: refreshing ? "transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)" : undefined,
       }}
     >
       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-background border shadow-sm">
@@ -103,15 +105,25 @@ export function AppShell({ children }: { children: ReactNode }) {
         <AppSidebar variant="inset" />
         <SidebarInset>
           <SiteHeader />
-          <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
-          <main className="flex flex-1 flex-col pb-[calc(56px+env(safe-area-inset-bottom))] md:pb-0">
-            <div className="mx-auto max-w-4xl w-full p-4 md:p-6">{children}</div>
-          </main>
+          <div className="relative flex flex-1 flex-col overflow-hidden">
+            <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
+            <main
+              className="flex flex-1 flex-col pb-[calc(64px+env(safe-area-inset-bottom))] md:pb-0"
+              style={{
+                transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined,
+                transition: pullDistance > 0 ? "none" : "transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)",
+              }}
+            >
+              <div className="mx-auto max-w-4xl w-full p-4 md:p-6">{children}</div>
+            </main>
+          </div>
         </SidebarInset>
         <BottomNav />
       </SidebarProvider>
+      <RouteProgress />
       <CommandPalette />
       <GlobalForms />
+      <InstallPrompt />
     </HeaderSlotProvider>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "./store";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 const AUTH_PAGES = ["/login", "/auth", "/forgot-password", "/reset-password"];
 
@@ -11,6 +12,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const supabase = createClient();
+
+    const isOnAuthPage = () =>
+      AUTH_PAGES.some((p) => window.location.pathname.startsWith(p));
+
+    const redirectToLogin = () => {
+      if (!isOnAuthPage()) {
+        // Set loading false BEFORE redirect — in iOS standalone PWA,
+        // the navigation can stall, leaving the app in perpetual loading.
+        setLoading(false);
+        window.location.href = "/login";
+      } else {
+        setLoading(false);
+      }
+    };
 
     const loadProfile = async (userId: string) => {
       const { data: profile } = await supabase
@@ -21,17 +36,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (profile) setProfile(profile);
     };
 
-    // onAuthStateChange fires INITIAL_SESSION synchronously on subscribe with the
-    // current session state — no need for a separate initAuth() that races it.
+    // Safety timeout: if onAuthStateChange never fires (e.g. cookies gone,
+    // Supabase SDK stuck), force out of loading after 5s.
+    const safetyTimeout = setTimeout(() => {
+      setLoading(false);
+    }, 5000);
+
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
+      clearTimeout(safetyTimeout);
       const user = session?.user ?? null;
       setUser(user);
 
       if (user) {
-        // Load profile only on meaningful events — TOKEN_REFRESHED fires hourly
-        // and the profile hasn't changed, so skip it to avoid extra DB load.
         if (
           event === "SIGNED_IN" ||
           event === "INITIAL_SESSION" ||
@@ -43,26 +61,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Profile load failure is non-fatal; the user is still authenticated.
           }
         }
+        setLoading(false);
       } else if (event === "SIGNED_OUT") {
-        // Redirect only on an intentional sign-out, not on transient token-refresh
-        // failures that temporarily yield a null session (avoids spurious logouts).
+        // Supabase fires SIGNED_OUT on transient token refresh failures too.
+        // Try to recover before actually logging out.
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        if (refreshed?.session) {
+          setUser(refreshed.session.user);
+          setLoading(false);
+          return;
+        }
         setProfile(null);
-        const onAuthPage = AUTH_PAGES.some((p) =>
-          window.location.pathname.startsWith(p)
-        );
-        if (!onAuthPage) window.location.href = "/login";
+        redirectToLogin();
       } else if (event === "INITIAL_SESSION") {
         // No session at startup → redirect to login
-        const onAuthPage = AUTH_PAGES.some((p) =>
-          window.location.pathname.startsWith(p)
-        );
-        if (!onAuthPage) window.location.href = "/login";
+        setProfile(null);
+        redirectToLogin();
+      } else {
+        setLoading(false);
       }
-
-      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(safetyTimeout);
+      subscription.unsubscribe();
+    };
   }, [setUser, setProfile, setLoading]);
 
   return <>{children}</>;

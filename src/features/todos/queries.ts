@@ -2,33 +2,20 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import { useEffect } from "react";
 import type { Todo, TodoInsert, TodoUpdate } from "@/lib/supabase/types";
 import { getNextDueDate } from "@/lib/recurrence";
 import { toast } from "sonner";
+import { useRealtimeSync } from "@/hooks/use-realtime-sync";
 
-const TODOS_KEY = ["todos"];
+export const TODOS_KEY = ["todos"];
 
 export function useTodos() {
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const supabase = createClient();
-    const channel = supabase
-      .channel("todos-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "todos" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: TODOS_KEY });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
+  useRealtimeSync({
+    table: "todos",
+    queryKey: TODOS_KEY,
+    channelName: "todos-realtime",
+    userIdColumn: "created_by",
+  });
 
   return useQuery<Todo[]>({
     queryKey: TODOS_KEY,

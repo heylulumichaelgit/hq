@@ -21,13 +21,14 @@ import { useExpenses, useDeleteExpense } from "../queries";
 import type { Expense } from "../queries";
 
 const CATEGORY_COLORS: Record<string, string> = {
-  "Office Supplies": "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
-  Travel: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-  "Meals & Entertainment": "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
+  Groceries: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
+  Dining: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
+  Transport: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
   Utilities: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
-  Software: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300",
-  Equipment: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
-  "Professional Services": "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300",
+  Healthcare: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
+  Shopping: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  Entertainment: "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300",
+  Home: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300",
   Other: "bg-muted text-muted-foreground",
 };
 

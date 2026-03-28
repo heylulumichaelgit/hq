@@ -22,6 +22,7 @@ import {
   ChevronRight,
   CheckCheck,
   Repeat2,
+  Check,
 } from "lucide-react";
 import {
   format,
@@ -32,7 +33,7 @@ import {
 } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { InlineQuickAdd } from "./inline-quick-add";
 import { getRecurrenceLabel } from "@/lib/recurrence";
 import { TodoDetailSheet } from "./todo-detail-sheet";
@@ -179,6 +180,65 @@ export function TodoItem({ todo, allTodos, depth = 0, todoLabelsMap, commentCoun
   const [showCascadePrompt, setShowCascadePrompt] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
 
+  // Swipe-to-complete state
+  const [swipeX, setSwipeX] = useState(0);
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const swipingRef = useRef(false);
+  const swipeTriggeredRef = useRef(false);
+  const directionLockedRef = useRef(false);
+
+  const SWIPE_THRESHOLD = 80;
+  const LOCK_DISTANCE = 15; // px before we decide swipe vs scroll
+
+  const onSwipeTouchStart = useCallback((e: React.TouchEvent) => {
+    swipeStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    swipingRef.current = false;
+    swipeTriggeredRef.current = false;
+    directionLockedRef.current = false;
+  }, []);
+
+  const onSwipeTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!swipeStartRef.current) return;
+    const dx = e.touches[0].clientX - swipeStartRef.current.x;
+    const dy = e.touches[0].clientY - swipeStartRef.current.y;
+
+    // Wait for enough movement to lock direction
+    if (!directionLockedRef.current) {
+      if (Math.abs(dx) < LOCK_DISTANCE && Math.abs(dy) < LOCK_DISTANCE) return;
+      directionLockedRef.current = true;
+      // If vertical movement dominates (or nearly equal), this is a scroll — bail permanently
+      if (Math.abs(dy) >= Math.abs(dx) * 0.7) {
+        swipeStartRef.current = null;
+        return;
+      }
+    }
+
+    // Only swipe right (positive dx)
+    if (dx > LOCK_DISTANCE) {
+      swipingRef.current = true;
+      e.preventDefault(); // prevent browser back-swipe and page movement
+      const capped = Math.min(dx, 140);
+      setSwipeX(capped);
+    }
+  }, []);
+
+  const onSwipeTouchEnd = useCallback(() => {
+    if (swipingRef.current && swipeX >= SWIPE_THRESHOLD && !swipeTriggeredRef.current) {
+      swipeTriggeredRef.current = true;
+      if (navigator.vibrate) navigator.vibrate(15);
+      toggleTodo.mutate({
+        id: todo.id,
+        is_completed: !todo.is_completed,
+        recurrence_rule: todo.recurrence_rule,
+        due_date: todo.due_date,
+      });
+    }
+    setSwipeX(0);
+    swipeStartRef.current = null;
+    swipingRef.current = false;
+    directionLockedRef.current = false;
+  }, [swipeX, todo, toggleTodo]);
+
   const todoLabels = todoLabelsMap.get(todo.id) ?? [];
   const commentCount = commentCountsMap.get(todo.id) ?? 0;
 
@@ -228,24 +288,54 @@ export function TodoItem({ todo, allTodos, depth = 0, todoLabelsMap, commentCoun
 
   const dueDateInfo = todo.due_date ? formatDueDate(todo.due_date) : null;
 
+  const swipeProgress = Math.min(swipeX / SWIPE_THRESHOLD, 1);
+
   return (
     <>
-      <motion.div
-        layout
-        initial={{ opacity: 0, y: 8 }}
-        animate={{
-          opacity: todo.is_completed ? 0.6 : 1,
-          y: 0,
-        }}
-        exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
-        transition={{ type: "spring", stiffness: 500, damping: 40 }}
+      <div
         className={cn(
-          "group flex items-start gap-3 rounded-lg border px-4 py-3 transition-colors hover:bg-accent/50",
-          depth === 1 && "ml-8 border-dashed",
-          depth === 2 && "ml-16 border-dashed border-muted-foreground/30",
-          todo.is_completed && "bg-muted/20 border-muted/50"
+          "relative overflow-hidden rounded-lg",
+          depth === 1 && "ml-8",
+          depth === 2 && "ml-16"
         )}
       >
+        {/* Swipe reveal background */}
+        <div
+          className="absolute inset-0 flex items-center pl-5 rounded-lg bg-emerald-500/15"
+          style={{ opacity: swipeX > 10 ? 1 : 0 }}
+        >
+          <Check
+            className="h-5 w-5 text-emerald-600 dark:text-emerald-400 transition-transform"
+            style={{
+              transform: `scale(${swipeProgress})`,
+              opacity: swipeProgress,
+            }}
+          />
+        </div>
+
+        <motion.div
+          layout
+          initial={{ opacity: 0, y: 8 }}
+          animate={{
+            opacity: todo.is_completed ? 0.6 : 1,
+            y: 0,
+          }}
+          exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
+          transition={{ type: "spring", stiffness: 500, damping: 40 }}
+          className={cn(
+            "group relative flex items-start gap-3 rounded-lg border px-4 py-3 transition-colors hover:bg-accent/50 bg-background",
+            depth === 1 && "border-dashed",
+            depth === 2 && "border-dashed border-muted-foreground/30",
+            todo.is_completed && "bg-muted/20 border-muted/50"
+          )}
+          style={{
+            transform: swipeX > 0 ? `translateX(${swipeX}px)` : undefined,
+            transition: swipeX > 0 ? "none" : "transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)",
+          }}
+          onTouchStart={onSwipeTouchStart}
+          onTouchMove={onSwipeTouchMove}
+          onTouchEnd={onSwipeTouchEnd}
+        >
         <CircularCheckbox
           checked={todo.is_completed}
           priority={todo.priority}
@@ -373,6 +463,7 @@ export function TodoItem({ todo, allTodos, depth = 0, todoLabelsMap, commentCoun
           </DropdownMenu>
         </div>
       </motion.div>
+      </div>
 
       {/* Cascade complete prompt */}
       <AnimatePresence>

@@ -1,5 +1,5 @@
-const CACHE_NAME = "michael-family-v3";
-const STATIC_ASSETS = ["/manifest.json"];
+const CACHE_NAME = "michael-family-v4";
+const STATIC_ASSETS = ["/manifest.json", "/offline.html"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -24,14 +24,16 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = event.request.url;
 
-  // Never cache API calls, Supabase requests, or navigation requests
-  if (
-    url.includes("/api/") ||
-    url.includes("supabase") ||
-    event.request.mode === "navigate"
-  ) {
+  // Never cache API calls or Supabase requests
+  if (url.includes("/api/") || url.includes("supabase")) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // Navigation requests — serve offline page on failure
+  if (event.request.mode === "navigate") {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
+      fetch(event.request).catch(() => caches.match("/offline.html"))
     );
     return;
   }

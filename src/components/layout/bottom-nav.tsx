@@ -28,7 +28,7 @@ export function BottomNav() {
               key={tab.href}
               href={tab.href}
               className={cn(
-                "flex flex-1 flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium transition-colors min-h-[56px]",
+                "flex flex-1 flex-col items-center justify-center gap-1 py-3 text-[10px] font-medium transition-colors min-h-[64px]",
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
@@ -44,7 +44,7 @@ export function BottomNav() {
         })}
         <button
           onClick={toggleSidebar}
-          className="flex flex-1 flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors min-h-[56px]"
+          className="flex flex-1 flex-col items-center justify-center gap-1 py-3 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors min-h-[64px]"
         >
           <Menu className="h-5 w-5" strokeWidth={1.75} />
           Menu

@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogTrigger,
+} from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -107,7 +107,7 @@ export function EventFormDialog({ defaultDate, trigger, open: controlledOpen, on
   };
 
   return (
-    <Dialog
+    <ResponsiveDialog
       open={open}
       onOpenChange={(v) => {
         setOpen(v);
@@ -115,19 +115,19 @@ export function EventFormDialog({ defaultDate, trigger, open: controlledOpen, on
       }}
     >
       {!isControlled && (
-        <DialogTrigger asChild>
+        <ResponsiveDialogTrigger asChild>
           {trigger ?? (
             <Button className="h-9 gap-2">
               <Plus className="h-4 w-4" />
               <span>Add Event</span>
             </Button>
           )}
-        </DialogTrigger>
+        </ResponsiveDialogTrigger>
       )}
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>New Family Event</DialogTitle>
-        </DialogHeader>
+      <ResponsiveDialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>New Family Event</ResponsiveDialogTitle>
+        </ResponsiveDialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           <div className="space-y-2">
             <Label htmlFor="title">Title *</Label>
@@ -255,7 +255,7 @@ export function EventFormDialog({ defaultDate, trigger, open: controlledOpen, on
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }

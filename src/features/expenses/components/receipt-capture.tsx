@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useRef, useCallback, DragEvent } from "react";
-import { Camera, Upload, FileText, X, Loader2, Receipt } from "lucide-react";
+import {
+  Camera,
+  Upload,
+  FileText,
+  X,
+  Loader2,
+  Receipt,
+  Sparkles,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,13 +28,14 @@ import { useAuthStore } from "@/features/auth/store";
 import { toast } from "sonner";
 
 const CATEGORIES = [
-  "Office Supplies",
-  "Travel",
-  "Meals & Entertainment",
+  "Groceries",
+  "Dining",
+  "Transport",
   "Utilities",
-  "Software",
-  "Equipment",
-  "Professional Services",
+  "Healthcare",
+  "Shopping",
+  "Entertainment",
+  "Home",
   "Other",
 ] as const;
 
@@ -38,6 +47,14 @@ interface UploadResult {
   mock?: boolean;
 }
 
+interface ExtractedExpense {
+  amount: number | null;
+  currency: string | null;
+  date: string | null;
+  description: string | null;
+  category: string | null;
+}
+
 export function ReceiptCapture() {
   const { user } = useAuthStore();
   const createExpense = useCreateExpense();
@@ -46,6 +63,8 @@ export function ReceiptCapture() {
   const [preview, setPreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [aiExtracted, setAiExtracted] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>("");
 
   // Form state
@@ -53,19 +72,61 @@ export function ReceiptCapture() {
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("EUR");
   const [category, setCategory] = useState<string>("Other");
-  const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(() =>
+    new Date().toISOString().split("T")[0]
+  );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = useCallback((selected: File) => {
-    setFile(selected);
-    if (selected.type.startsWith("image/")) {
-      setPreview(URL.createObjectURL(selected));
-    } else {
-      setPreview(null);
+  const extractFromReceipt = useCallback(async (imageFile: File) => {
+    if (!imageFile.type.startsWith("image/")) return;
+
+    setIsExtracting(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", imageFile);
+
+      const res = await fetch("/api/expenses/extract", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) return;
+
+      const { extracted }: { extracted: ExtractedExpense } = await res.json();
+
+      // Auto-fill fields with extracted values
+      if (extracted.description) setDescription(extracted.description);
+      if (extracted.amount != null) setAmount(String(extracted.amount));
+      if (extracted.currency && CURRENCIES.includes(extracted.currency)) {
+        setCurrency(extracted.currency);
+      }
+      if (extracted.category) setCategory(extracted.category);
+      if (extracted.date) setDate(extracted.date);
+
+      setAiExtracted(true);
+      toast.success("Receipt details extracted");
+    } catch {
+      // Silently fail — user can fill in manually
+    } finally {
+      setIsExtracting(false);
     }
   }, []);
+
+  const handleFile = useCallback(
+    (selected: File) => {
+      setFile(selected);
+      setAiExtracted(false);
+      if (selected.type.startsWith("image/")) {
+        setPreview(URL.createObjectURL(selected));
+        extractFromReceipt(selected);
+      } else {
+        setPreview(null);
+      }
+    },
+    [extractFromReceipt]
+  );
 
   const handleDrop = useCallback(
     (e: DragEvent<HTMLDivElement>) => {
@@ -86,6 +147,7 @@ export function ReceiptCapture() {
 
   const clearFile = () => {
     setFile(null);
+    setAiExtracted(false);
     if (preview) URL.revokeObjectURL(preview);
     setPreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -126,7 +188,9 @@ export function ReceiptCapture() {
         receiptUrl = result.url ?? null;
 
         if (result.mock) {
-          toast.info("Dropbox not configured — receipt metadata saved without file.");
+          toast.info(
+            "Dropbox not configured — receipt metadata saved without file."
+          );
         }
       }
 
@@ -149,9 +213,12 @@ export function ReceiptCapture() {
       setCurrency("EUR");
       setCategory("Other");
       setDate(new Date().toISOString().split("T")[0]);
+      setAiExtracted(false);
       clearFile();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save expense");
+      toast.error(
+        err instanceof Error ? err.message : "Failed to save expense"
+      );
     } finally {
       setIsUploading(false);
       setUploadProgress("");
@@ -159,6 +226,7 @@ export function ReceiptCapture() {
   };
 
   const isPdf = file?.type === "application/pdf";
+  const isBusy = isUploading || isExtracting;
 
   return (
     <Card>
@@ -266,15 +334,44 @@ export function ReceiptCapture() {
                     </div>
                   ) : null}
 
+                  {isExtracting && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-[2px]">
+                      <div className="flex items-center gap-2 rounded-full bg-background/90 border px-4 py-2 shadow-sm">
+                        <Loader2 className="size-4 animate-spin text-primary" />
+                        <span className="text-sm font-medium">
+                          Reading receipt…
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   <Button
                     type="button"
                     variant="secondary"
                     size="icon"
                     className="absolute top-2 right-2 size-7 rounded-full shadow"
                     onClick={clearFile}
+                    disabled={isExtracting}
                   >
                     <X className="size-3.5" />
                   </Button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* AI extracted indicator */}
+          <AnimatePresence>
+            {aiExtracted && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Sparkles className="size-3 text-primary" />
+                  <span>AI extracted — review and edit before saving</span>
                 </div>
               </motion.div>
             )}
@@ -292,7 +389,7 @@ export function ReceiptCapture() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 required
-                disabled={isUploading}
+                disabled={isBusy}
               />
             </div>
 
@@ -307,7 +404,7 @@ export function ReceiptCapture() {
                   placeholder="0.00"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  disabled={isUploading}
+                  disabled={isBusy}
                 />
               </div>
 
@@ -316,7 +413,7 @@ export function ReceiptCapture() {
                 <Select
                   value={currency}
                   onValueChange={setCurrency}
-                  disabled={isUploading}
+                  disabled={isBusy}
                 >
                   <SelectTrigger id="currency">
                     <SelectValue />
@@ -338,7 +435,7 @@ export function ReceiptCapture() {
                 <Select
                   value={category}
                   onValueChange={setCategory}
-                  disabled={isUploading}
+                  disabled={isBusy}
                 >
                   <SelectTrigger id="category">
                     <SelectValue />
@@ -360,7 +457,7 @@ export function ReceiptCapture() {
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  disabled={isUploading}
+                  disabled={isBusy}
                 />
               </div>
             </div>
@@ -369,7 +466,7 @@ export function ReceiptCapture() {
           <Button
             type="submit"
             className="w-full gap-2"
-            disabled={isUploading || !description.trim()}
+            disabled={isBusy || !description.trim()}
           >
             {isUploading ? (
               <>
