@@ -14,7 +14,10 @@ export interface Expense {
   category: string;
   receipt_url: string | null;
   dropbox_path: string | null;
+  storage_path: string | null;
+  storage_url: string | null;
   uploaded_by: string | null;
+  expense_type: "personal" | "company";
   created_at: string;
 }
 

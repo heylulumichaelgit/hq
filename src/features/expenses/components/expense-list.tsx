@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FileText, ExternalLink, Trash2, Receipt } from "lucide-react";
+import { FileText, ExternalLink, Trash2, Receipt, Wallet, Briefcase } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -58,8 +59,9 @@ function ExpenseRow({ expense }: ExpenseRowProps) {
   const deleteExpense = useDeleteExpense();
   const categoryClass = CATEGORY_COLORS[expense.category] ?? CATEGORY_COLORS.Other;
 
-  const hasReceipt = !!expense.receipt_url;
-  const isImage = hasReceipt && isImageUrl(expense.receipt_url!);
+  const receiptLink = expense.receipt_url ?? expense.storage_url;
+  const hasReceipt = !!receiptLink;
+  const isImage = hasReceipt && isImageUrl(receiptLink!);
 
   return (
     <motion.div
@@ -74,14 +76,14 @@ function ExpenseRow({ expense }: ExpenseRowProps) {
         {hasReceipt ? (
           <button
             type="button"
-            onClick={() => window.open(expense.receipt_url!, "_blank")}
+            onClick={() => window.open(receiptLink!, "_blank")}
             className="size-10 rounded overflow-hidden border bg-muted flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
             title="Open receipt in Dropbox"
           >
             {isImage ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={expense.receipt_url!}
+                src={receiptLink!}
                 alt="Receipt"
                 className="size-10 object-cover"
               />
@@ -103,7 +105,7 @@ function ExpenseRow({ expense }: ExpenseRowProps) {
           {hasReceipt && (
             <ExternalLink
               className="size-3 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-              onClick={() => window.open(expense.receipt_url!, "_blank")}
+              onClick={() => window.open(receiptLink!, "_blank")}
             />
           )}
         </div>
@@ -116,6 +118,22 @@ function ExpenseRow({ expense }: ExpenseRowProps) {
             className={`text-[10px] px-1.5 py-0 h-4 font-normal ${categoryClass}`}
           >
             {expense.category}
+          </Badge>
+          <Badge
+            variant="secondary"
+            className={cn(
+              "text-[10px] px-1.5 py-0 h-4 font-normal gap-0.5",
+              expense.expense_type === "company"
+                ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                : "bg-muted text-muted-foreground"
+            )}
+          >
+            {expense.expense_type === "company" ? (
+              <Briefcase className="size-2.5" />
+            ) : (
+              <Wallet className="size-2.5" />
+            )}
+            {expense.expense_type === "company" ? "Company" : "Personal"}
           </Badge>
         </div>
       </div>
@@ -173,14 +191,24 @@ function ExpenseRow({ expense }: ExpenseRowProps) {
   );
 }
 
+type ExpenseFilter = "all" | "personal" | "company";
+
 export function ExpenseList() {
   const { data: expenses = [], isLoading } = useExpenses();
-  const [_openMonths] = useState<Record<string, boolean>>({});
+  const [filter, setFilter] = useState<ExpenseFilter>("all");
+
+  const filtered = useMemo(
+    () =>
+      filter === "all"
+        ? expenses
+        : expenses.filter((e) => e.expense_type === filter),
+    [expenses, filter]
+  );
 
   const grouped = useMemo(() => {
     const map = new Map<string, { label: string; expenses: Expense[]; total: Record<string, number> }>();
 
-    for (const expense of expenses) {
+    for (const expense of filtered) {
       const key = getMonthKey(expense.date);
       if (!map.has(key)) {
         map.set(key, {
@@ -199,7 +227,7 @@ export function ExpenseList() {
     }
 
     return Array.from(map.entries()).sort(([a], [b]) => b.localeCompare(a));
-  }, [expenses]);
+  }, [filtered]);
 
   if (isLoading) {
     return (
@@ -225,8 +253,41 @@ export function ExpenseList() {
     );
   }
 
+  const FILTER_OPTIONS: { value: ExpenseFilter; label: string }[] = [
+    { value: "all", label: "All" },
+    { value: "personal", label: "Personal" },
+    { value: "company", label: "Company" },
+  ];
+
   return (
     <div className="space-y-6">
+      {/* Filter tabs */}
+      <div className="flex gap-1 rounded-lg bg-muted p-1">
+        {FILTER_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => setFilter(opt.value)}
+            className={cn(
+              "flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+              filter === opt.value
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
+      {filtered.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <p className="text-sm text-muted-foreground">
+            No {filter} expenses
+          </p>
+        </div>
+      )}
+
       <AnimatePresence initial={false}>
         {grouped.map(([monthKey, group]) => {
           const totalEntries = Object.entries(group.total);

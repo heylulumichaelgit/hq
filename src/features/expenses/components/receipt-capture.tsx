@@ -9,6 +9,8 @@ import {
   Loader2,
   Receipt,
   Sparkles,
+  Wallet,
+  Briefcase,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -22,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { useCreateExpense } from "../queries";
 import { useAuthStore } from "@/features/auth/store";
@@ -42,9 +45,10 @@ const CATEGORIES = [
 const CURRENCIES = ["EUR", "USD", "GBP", "CHF", "CAD", "AUD"];
 
 interface UploadResult {
-  path: string;
-  url: string | null;
-  mock?: boolean;
+  storage_url: string | null;
+  storage_path: string | null;
+  dropbox_path: string | null;
+  dropbox_url: string | null;
 }
 
 interface ExtractedExpense {
@@ -68,6 +72,7 @@ export function ReceiptCapture() {
   const [uploadProgress, setUploadProgress] = useState<string>("");
 
   // Form state
+  const [expenseType, setExpenseType] = useState<"personal" | "company">("personal");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("EUR");
@@ -166,13 +171,16 @@ export function ReceiptCapture() {
 
     let receiptUrl: string | null = null;
     let dropboxPath: string | null = null;
+    let storagePath: string | null = null;
+    let storageUrl: string | null = null;
 
     try {
       if (file) {
         const formData = new FormData();
         formData.append("file", file);
+        formData.append("expense_type", expenseType);
 
-        setUploadProgress("Uploading to Dropbox…");
+        setUploadProgress("Uploading receipt…");
         const res = await fetch("/api/expenses/upload", {
           method: "POST",
           body: formData,
@@ -184,14 +192,10 @@ export function ReceiptCapture() {
         }
 
         const result: UploadResult = await res.json();
-        dropboxPath = result.path ?? null;
-        receiptUrl = result.url ?? null;
-
-        if (result.mock) {
-          toast.info(
-            "Dropbox not configured — receipt metadata saved without file."
-          );
-        }
+        storagePath = result.storage_path ?? null;
+        storageUrl = result.storage_url ?? null;
+        dropboxPath = result.dropbox_path ?? null;
+        receiptUrl = result.dropbox_url ?? storageUrl;
       }
 
       setUploadProgress("Saving expense…");
@@ -202,12 +206,16 @@ export function ReceiptCapture() {
         currency,
         description: description.trim(),
         category,
+        expense_type: expenseType,
         receipt_url: receiptUrl,
         dropbox_path: dropboxPath,
+        storage_path: storagePath,
+        storage_url: storageUrl,
         uploaded_by: user?.id ?? null,
       });
 
       // Reset form
+      setExpenseType("personal");
       setDescription("");
       setAmount("");
       setCurrency("EUR");
@@ -232,6 +240,27 @@ export function ReceiptCapture() {
     <Card>
       <CardContent className="pt-5 space-y-4">
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Expense type toggle */}
+          <ToggleGroup
+            type="single"
+            value={expenseType}
+            onValueChange={(v) => {
+              if (v) setExpenseType(v as "personal" | "company");
+            }}
+            variant="outline"
+            size="sm"
+            className="w-full"
+          >
+            <ToggleGroupItem value="personal" className="flex-1 gap-1.5">
+              <Wallet className="size-3.5" />
+              Personal
+            </ToggleGroupItem>
+            <ToggleGroupItem value="company" className="flex-1 gap-1.5">
+              <Briefcase className="size-3.5" />
+              Company
+            </ToggleGroupItem>
+          </ToggleGroup>
+
           {/* Drop zone / camera area */}
           <AnimatePresence mode="wait">
             {!file ? (
