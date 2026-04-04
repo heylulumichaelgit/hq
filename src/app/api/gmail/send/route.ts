@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(result);
   } catch (err) {
-    console.error("Gmail send error:", err);
+    console.error("Gmail send error:", err instanceof Error ? err.message : "Unknown error");
     return NextResponse.json({ error: "Failed to send message" }, { status: 500 });
   }
 }

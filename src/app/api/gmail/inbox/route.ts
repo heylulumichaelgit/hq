@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     const messages = await listMessages(authClient, query, max);
     return NextResponse.json(messages);
   } catch (err) {
-    console.error("Gmail inbox error:", err);
+    console.error("Gmail inbox error:", err instanceof Error ? err.message : "Unknown error");
     return NextResponse.json({ error: "Failed to fetch inbox" }, { status: 500 });
   }
 }

@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     const profile = await getProfile(authClient);
     return NextResponse.json(profile);
   } catch (err) {
-    console.error("Gmail profile error:", err);
+    console.error("Gmail profile error:", err instanceof Error ? err.message : "Unknown error");
     return NextResponse.json({ error: "Failed to fetch profile" }, { status: 500 });
   }
 }

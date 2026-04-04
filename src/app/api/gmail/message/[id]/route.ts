@@ -46,7 +46,7 @@ export async function GET(
     const message = await getMessage(authClient, messageId);
     return NextResponse.json(message);
   } catch (err) {
-    console.error("Gmail message error:", err);
+    console.error("Gmail message error:", err instanceof Error ? err.message : "Unknown error");
     return NextResponse.json({ error: "Failed to fetch message" }, { status: 500 });
   }
 }

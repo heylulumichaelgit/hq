@@ -116,23 +116,31 @@ export async function listMessages(
   const messageIds = listRes.data.messages ?? [];
   if (messageIds.length === 0) return [];
 
-  // Fetch metadata for each message in parallel
-  const results = await Promise.allSettled(
-    messageIds.map(async (m) => {
-      const res = await gmail.users.messages.get({
-        userId: "me",
-        id: m.id!,
-        format: "metadata",
-        metadataHeaders: ["From", "Subject", "Date"],
-      });
-      return res.data;
-    })
-  );
+  // Fetch metadata with bounded concurrency to avoid Gmail rate limits
+  const CONCURRENCY = 10;
+  type MsgData = { id?: string | null; threadId?: string | null; snippet?: string | null; labelIds?: string[] | null; payload?: { headers?: { name?: string | null; value?: string | null }[] | null } | null };
+  const allMessages: MsgData[] = [];
+
+  for (let i = 0; i < messageIds.length; i += CONCURRENCY) {
+    const batch = messageIds.slice(i, i + CONCURRENCY);
+    const batchResults = await Promise.allSettled(
+      batch.map(async (m) => {
+        const res = await gmail.users.messages.get({
+          userId: "me",
+          id: m.id!,
+          format: "metadata",
+          metadataHeaders: ["From", "Subject", "Date"],
+        });
+        return res.data;
+      })
+    );
+    for (const r of batchResults) {
+      if (r.status === "fulfilled") allMessages.push(r.value);
+    }
+  }
 
   const summaries: GmailMessageSummary[] = [];
-  for (const r of results) {
-    if (r.status !== "fulfilled") continue;
-    const msg = r.value;
+  for (const msg of allMessages) {
     const headers = msg.payload?.headers ?? [];
     summaries.push({
       id: msg.id ?? "",

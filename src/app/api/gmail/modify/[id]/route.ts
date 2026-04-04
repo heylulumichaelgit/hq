@@ -46,7 +46,7 @@ export async function POST(
     const result = await modifyMessage(authClient, messageId, addLabelIds, removeLabelIds);
     return NextResponse.json(result);
   } catch (err) {
-    console.error("Gmail modify error:", err);
+    console.error("Gmail modify error:", err instanceof Error ? err.message : "Unknown error");
     return NextResponse.json({ error: "Failed to modify message" }, { status: 500 });
   }
 }

@@ -1,14 +1,14 @@
 import { NextRequest } from "next/server";
 import crypto from "crypto";
 
-/** Timing-safe comparison of two strings. */
+/** Timing-safe comparison via HMAC — constant time regardless of input length.
+ *  Both values are hashed to the same fixed length before comparison,
+ *  preventing length-oracle attacks. */
 function timingSafeCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    // Still do the comparison to avoid leaking length info via short-circuit timing
-    crypto.timingSafeEqual(Buffer.from(a), Buffer.from(a));
-    return false;
-  }
-  return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  const key = crypto.randomBytes(32);
+  const hmacA = crypto.createHmac("sha256", key).update(a).digest();
+  const hmacB = crypto.createHmac("sha256", key).update(b).digest();
+  return crypto.timingSafeEqual(hmacA, hmacB);
 }
 
 /** Validate a Bearer token against HQ_API_KEY. */
@@ -25,14 +25,15 @@ export function validateApiKey(request: NextRequest): boolean {
   return timingSafeCompare(token, apiKey);
 }
 
-/** Allowed Google accounts for API access. Add emails here to grant access. */
+/** Allowed Google accounts for API access. Add emails here to grant access.
+ *  FAIL-CLOSED: if the env var is missing or empty, NO accounts are allowed. */
 const ALLOWED_GMAIL_ACCOUNTS = new Set(
   (process.env.HQ_ALLOWED_GMAIL_ACCOUNTS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean)
 );
 
 /** Check if a Google email is allowed for API access.
- *  Returns true if the allowlist is empty (backwards compat) or the email is in it. */
+ *  Returns false if the allowlist is empty (fail-closed). */
 export function isAllowedGmailAccount(email: string): boolean {
-  if (ALLOWED_GMAIL_ACCOUNTS.size === 0) return true;
+  if (ALLOWED_GMAIL_ACCOUNTS.size === 0) return false;
   return ALLOWED_GMAIL_ACCOUNTS.has(email.toLowerCase());
 }
