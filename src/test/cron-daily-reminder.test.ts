@@ -12,14 +12,45 @@ vi.mock("web-push", () => ({
 // ─── Mock Supabase server client ─────────────────────────────────────────────
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn().mockResolvedValue({
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          lte: vi.fn().mockReturnValue({
-            is: vi.fn().mockResolvedValue({ data: [], error: null }),
+    from: vi.fn((table: string) => {
+      if (table === "todos") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              lte: vi.fn().mockReturnValue({
+                is: vi.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
           }),
-        }),
-      }),
+        };
+      }
+
+      if (table === "family_events") {
+        return {
+          select: vi.fn().mockReturnValue({
+            lt: vi.fn().mockReturnValue({
+              gt: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          }),
+        };
+      }
+
+      if (table === "push_subscriptions") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+          }),
+          delete: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ data: null, error: null }),
+          }),
+        };
+      }
+
+      return {
+        select: vi.fn().mockResolvedValue({ data: [], error: null }),
+      };
     }),
   }),
 }));
@@ -89,9 +120,10 @@ describe("GET /api/cron/daily-reminder — authentication checks", () => {
 
     const { GET } = await import("@/app/api/cron/daily-reminder/route");
     const res = await GET(makeReq("Bearer secret123"));
-    // Supabase mock returns empty todos list → should get { message: "No todos due today" }
     const body = await res.json();
     expect(res.status).toBe(200);
-    expect(body.message).toBe("No todos due today");
+    expect(body.ok).toBe(true);
+    expect(body.todoCount).toBe(0);
+    expect(body.eventCount).toBe(0);
   });
 });

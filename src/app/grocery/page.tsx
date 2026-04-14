@@ -34,7 +34,7 @@ export default function GroceryPage() {
       unit: null,
       is_checked: false,
       added_by: user?.id ?? null,
-      position: Date.now(),
+      position: Math.floor(Date.now() / 1000),
     }]);
   }, [addItems, user]);
 

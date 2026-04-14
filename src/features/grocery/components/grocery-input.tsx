@@ -57,6 +57,8 @@ export function GroceryInput({ onSuggestionsReceived }: GroceryInputProps) {
 
       const result: ParseResult = await res.json();
 
+      const basePosition = Math.floor(Date.now() / 1000);
+
       await addItems.mutateAsync(
         result.items.map((item, i) => ({
           name: item.name,
@@ -65,7 +67,7 @@ export function GroceryInput({ onSuggestionsReceived }: GroceryInputProps) {
           unit: item.unit ?? null,
           is_checked: false,
           added_by: user?.id ?? null,
-          position: Date.now() + i,
+          position: basePosition + i,
         }))
       );
 

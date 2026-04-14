@@ -43,11 +43,35 @@ export function useAddGroceryItems() {
       if (error) throw error;
       return data as GroceryItem[];
     },
+    onMutate: async (items) => {
+      await queryClient.cancelQueries({ queryKey: GROCERY_KEY });
+      const previousItems = queryClient.getQueryData<GroceryItem[]>(GROCERY_KEY) ?? [];
+      const now = new Date().toISOString();
+      const optimisticItems: GroceryItem[] = items.map((item) => ({
+        id: `optimistic-${crypto.randomUUID()}`,
+        name: item.name,
+        quantity: item.quantity ?? null,
+        category: item.category ?? "Other",
+        unit: item.unit ?? null,
+        is_checked: item.is_checked ?? false,
+        added_by: item.added_by ?? null,
+        position: item.position ?? 0,
+        notes: item.notes ?? null,
+        created_at: item.created_at ?? now,
+      }));
+
+      queryClient.setQueryData<GroceryItem[]>(GROCERY_KEY, [...previousItems, ...optimisticItems]);
+
+      return { previousItems };
+    },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: GROCERY_KEY });
       toast.success(`${data.length} item${data.length !== 1 ? "s" : ""} added`);
     },
-    onError: () => toast.error("Failed to add items"),
+    onError: (_error, _items, context) => {
+      queryClient.setQueryData(GROCERY_KEY, context?.previousItems ?? []);
+      toast.error("Failed to add items");
+    },
   });
 }
 
@@ -62,8 +86,24 @@ export function useToggleGroceryItem() {
         .eq("id", id);
       if (error) throw error;
     },
+    onMutate: async ({ id, is_checked }) => {
+      await queryClient.cancelQueries({ queryKey: GROCERY_KEY });
+      const previousItems = queryClient.getQueryData<GroceryItem[]>(GROCERY_KEY) ?? [];
+      queryClient.setQueryData<GroceryItem[]>(
+        GROCERY_KEY,
+        previousItems.map((item) =>
+          item.id === id
+            ? { ...item, is_checked, updated_at: new Date().toISOString() }
+            : item
+        )
+      );
+      return { previousItems };
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: GROCERY_KEY }),
-    onError: () => toast.error("Failed to update item"),
+    onError: (_error, _vars, context) => {
+      queryClient.setQueryData(GROCERY_KEY, context?.previousItems ?? []);
+      toast.error("Failed to update item");
+    },
   });
 }
 
@@ -78,8 +118,24 @@ export function useUpdateGroceryItem() {
         .eq("id", id);
       if (error) throw error;
     },
+    onMutate: async ({ id, ...updates }) => {
+      await queryClient.cancelQueries({ queryKey: GROCERY_KEY });
+      const previousItems = queryClient.getQueryData<GroceryItem[]>(GROCERY_KEY) ?? [];
+      queryClient.setQueryData<GroceryItem[]>(
+        GROCERY_KEY,
+        previousItems.map((item) =>
+          item.id === id
+            ? { ...item, ...updates, updated_at: new Date().toISOString() }
+            : item
+        )
+      );
+      return { previousItems };
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: GROCERY_KEY }),
-    onError: () => toast.error("Failed to update item"),
+    onError: (_error, _vars, context) => {
+      queryClient.setQueryData(GROCERY_KEY, context?.previousItems ?? []);
+      toast.error("Failed to update item");
+    },
   });
 }
 
@@ -91,8 +147,20 @@ export function useDeleteGroceryItem() {
       const { error } = await supabase.from("grocery_items").delete().eq("id", id);
       if (error) throw error;
     },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: GROCERY_KEY });
+      const previousItems = queryClient.getQueryData<GroceryItem[]>(GROCERY_KEY) ?? [];
+      queryClient.setQueryData<GroceryItem[]>(
+        GROCERY_KEY,
+        previousItems.filter((item) => item.id !== id)
+      );
+      return { previousItems };
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: GROCERY_KEY }),
-    onError: () => toast.error("Failed to delete item"),
+    onError: (_error, _id, context) => {
+      queryClient.setQueryData(GROCERY_KEY, context?.previousItems ?? []);
+      toast.error("Failed to delete item");
+    },
   });
 }
 
@@ -107,10 +175,22 @@ export function useClearCheckedItems() {
         .eq("is_checked", true);
       if (error) throw error;
     },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: GROCERY_KEY });
+      const previousItems = queryClient.getQueryData<GroceryItem[]>(GROCERY_KEY) ?? [];
+      queryClient.setQueryData<GroceryItem[]>(
+        GROCERY_KEY,
+        previousItems.filter((item) => !item.is_checked)
+      );
+      return { previousItems };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: GROCERY_KEY });
       toast.success("Checked items cleared");
     },
-    onError: () => toast.error("Failed to clear items"),
+    onError: (_error, _vars, context) => {
+      queryClient.setQueryData(GROCERY_KEY, context?.previousItems ?? []);
+      toast.error("Failed to clear items");
+    },
   });
 }

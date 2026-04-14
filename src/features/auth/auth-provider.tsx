@@ -8,7 +8,7 @@ import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 const AUTH_PAGES = ["/login", "/auth", "/forgot-password", "/reset-password"];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { setUser, setProfile, setLoading } = useAuthStore();
+  const { setUser, setProfile, setLoading, setReady } = useAuthStore();
 
   useEffect(() => {
     const supabase = createClient();
@@ -17,6 +17,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       AUTH_PAGES.some((p) => window.location.pathname.startsWith(p));
 
     const redirectToLogin = () => {
+      setReady(true);
       if (!isOnAuthPage()) {
         // Set loading false BEFORE redirect — in iOS standalone PWA,
         // the navigation can stall, leaving the app in perpetual loading.
@@ -36,9 +37,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (profile) setProfile(profile);
     };
 
-    // Safety timeout: if onAuthStateChange never fires (e.g. cookies gone,
-    // Supabase SDK stuck), force out of loading after 5s.
+    // Safety timeout: if auth init stalls, mark auth ready so data hooks can
+    // stop waiting forever and either recover or redirect.
     const safetyTimeout = setTimeout(() => {
+      setReady(true);
       setLoading(false);
     }, 5000);
 
@@ -61,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Profile load failure is non-fatal; the user is still authenticated.
           }
         }
+        setReady(true);
         setLoading(false);
       } else if (event === "SIGNED_OUT") {
         // Supabase fires SIGNED_OUT on transient token refresh failures too.
@@ -68,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: refreshed } = await supabase.auth.refreshSession();
         if (refreshed?.session) {
           setUser(refreshed.session.user);
+          setReady(true);
           setLoading(false);
           return;
         }
@@ -78,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(null);
         redirectToLogin();
       } else {
+        setReady(true);
         setLoading(false);
       }
     });
@@ -86,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearTimeout(safetyTimeout);
       subscription.unsubscribe();
     };
-  }, [setUser, setProfile, setLoading]);
+  }, [setUser, setProfile, setLoading, setReady]);
 
   return <>{children}</>;
 }

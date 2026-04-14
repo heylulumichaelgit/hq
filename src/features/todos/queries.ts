@@ -6,23 +6,37 @@ import type { Todo, TodoInsert, TodoUpdate } from "@/lib/supabase/types";
 import { getNextDueDate } from "@/lib/recurrence";
 import { toast } from "sonner";
 import { useRealtimeSync } from "@/hooks/use-realtime-sync";
+import { useAuthStore } from "@/features/auth/store";
 
 export const TODOS_KEY = ["todos"];
 
 export function useTodos() {
+  const user = useAuthStore((s) => s.user);
+  const isAuthReady = useAuthStore((s) => s.isReady);
+  const todoQueryKey = [...TODOS_KEY, user?.id ?? "anon"] as const;
+
   useRealtimeSync({
     table: "todos",
-    queryKey: TODOS_KEY,
+    queryKey: todoQueryKey,
     channelName: "todos-realtime",
     userIdColumn: "created_by",
   });
 
   return useQuery<Todo[]>({
-    queryKey: TODOS_KEY,
+    queryKey: todoQueryKey,
+    enabled: isAuthReady && !!user,
     retry: 1,
     staleTime: 30_000,
     queryFn: async () => {
       const supabase = createClient();
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.user) {
+        throw new Error("No active session");
+      }
 
       const { data, error } = await supabase
         .from("todos")
@@ -52,11 +66,46 @@ export function useCreateTodo() {
       if (error) throw error;
       return data as Todo;
     },
+    onMutate: async (todo) => {
+      await queryClient.cancelQueries({ queryKey: TODOS_KEY });
+      const snapshots = queryClient.getQueriesData<Todo[]>({ queryKey: TODOS_KEY });
+      const now = new Date().toISOString();
+      const optimisticTodo: Todo = {
+        id: `optimistic-${crypto.randomUUID()}`,
+        title: todo.title,
+        description: todo.description ?? null,
+        due_date: todo.due_date ?? null,
+        priority: todo.priority ?? "medium",
+        assigned_to: todo.assigned_to ?? "Both",
+        created_by: todo.created_by,
+        is_completed: todo.is_completed ?? false,
+        parent_id: todo.parent_id ?? null,
+        project_id: todo.project_id ?? null,
+        section: todo.section ?? null,
+        position: todo.position ?? 0,
+        recurrence_rule: todo.recurrence_rule ?? null,
+        duration_minutes: todo.duration_minutes ?? null,
+        completed_at: todo.completed_at ?? null,
+        created_at: todo.created_at ?? now,
+        updated_at: todo.updated_at ?? now,
+      };
+
+      for (const [key, existing] of snapshots) {
+        queryClient.setQueryData<Todo[]>(key, [optimisticTodo, ...(existing ?? [])]);
+      }
+
+      return { snapshots };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODOS_KEY });
       toast.success("Task created");
     },
-    onError: () => toast.error("Failed to create task"),
+    onError: (_error, _todo, context) => {
+      context?.snapshots.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
+      });
+      toast.error("Failed to create task");
+    },
   });
 }
 
@@ -76,10 +125,30 @@ export function useUpdateTodo() {
       if (error) throw error;
       return data as Todo;
     },
+    onMutate: async ({ id, ...updates }) => {
+      await queryClient.cancelQueries({ queryKey: TODOS_KEY });
+      const snapshots = queryClient.getQueriesData<Todo[]>({ queryKey: TODOS_KEY });
+
+      for (const [key, existing] of snapshots) {
+        queryClient.setQueryData<Todo[]>(
+          key,
+          (existing ?? []).map((todo) =>
+            todo.id === id ? { ...todo, ...updates, updated_at: new Date().toISOString() } : todo
+          )
+        );
+      }
+
+      return { snapshots };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODOS_KEY });
     },
-    onError: () => toast.error("Failed to update task"),
+    onError: (_error, _updates, context) => {
+      context?.snapshots.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
+      });
+      toast.error("Failed to update task");
+    },
   });
 }
 
@@ -141,7 +210,36 @@ export function useToggleTodo() {
       if (error) throw error;
       return data as Todo;
     },
-    onSuccess: (data, variables) => {
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: TODOS_KEY });
+      const snapshots = queryClient.getQueriesData<Todo[]>({ queryKey: TODOS_KEY });
+
+      const optimisticUpdates =
+        variables.is_completed && variables.recurrence_rule
+          ? {
+              is_completed: false,
+              due_date: getNextDueDate(variables.recurrence_rule, variables.due_date ?? null),
+            }
+          : { is_completed: variables.is_completed };
+
+      for (const [key, existing] of snapshots) {
+        queryClient.setQueryData<Todo[]>(
+          key,
+          (existing ?? []).map((todo) =>
+            todo.id === variables.id
+              ? {
+                  ...todo,
+                  ...optimisticUpdates,
+                  updated_at: new Date().toISOString(),
+                }
+              : todo
+          )
+        );
+      }
+
+      return { snapshots };
+    },
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: TODOS_KEY });
       if (variables.is_completed) {
         if (variables.recurrence_rule) {
@@ -151,7 +249,12 @@ export function useToggleTodo() {
         }
       }
     },
-    onError: () => toast.error("Failed to update task"),
+    onError: (_error, _variables, context) => {
+      context?.snapshots.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
+      });
+      toast.error("Failed to update task");
+    },
   });
 }
 
