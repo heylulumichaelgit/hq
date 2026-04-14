@@ -256,3 +256,18 @@ export async function getProfile(auth: OAuth2Client): Promise<GmailProfile> {
     historyId: res.data.historyId ?? "",
   };
 }
+
+
+export async function getGoogleUserProfile(auth: OAuth2Client): Promise<{
+  email: string | null;
+  name: string | null;
+  picture: string | null;
+}> {
+  const oauth2 = google.oauth2({ version: "v2", auth });
+  const { data } = await oauth2.userinfo.get();
+  return {
+    email: data.email ?? null,
+    name: data.name ?? null,
+    picture: data.picture ?? null,
+  };
+}
