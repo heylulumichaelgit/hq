@@ -3,7 +3,6 @@
 import { useTodos } from "../queries";
 import { useTodoFilterStore } from "../store";
 import { TodoItem } from "./todo-item";
-import { InlineQuickAdd } from "./inline-quick-add";
 import type { Todo } from "@/lib/supabase/types";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -239,16 +238,15 @@ export function TodoList({ projectId, personFilter }: TodoListProps) {
           <CheckCircle2 className="h-12 w-12 text-muted-foreground/50" />
           <p className="mt-4 text-lg font-medium text-muted-foreground">
             {todos?.length === 0
-              ? "No todos yet"
-              : "No todos match your filters"}
+              ? "No tasks yet"
+              : "No tasks match your filters"}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
             {todos?.length === 0
-              ? "Create your first todo to get started!"
+              ? "Use Today or the header actions to add the first one."
               : "Try adjusting your filters."}
           </p>
         </div>
-        <InlineQuickAdd projectId={projectId} />
       </div>
     );
   }
@@ -343,11 +341,6 @@ export function TodoList({ projectId, personFilter }: TodoListProps) {
           </Collapsible>
         );
       })}
-
-      {/* Inline quick add */}
-      <div className="pt-2">
-        <InlineQuickAdd projectId={projectId} />
-      </div>
 
       <p className="text-xs text-muted-foreground pt-2">
         {totalFiltered} of {todos?.length ?? 0} todos

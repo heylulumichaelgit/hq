@@ -21,7 +21,7 @@ export default function UpcomingPage() {
   const { data: todos, isLoading } = useTodos();
   const todoLabelsMap = useAllTodoLabels();
   const commentCounts = useCommentCounts();
-  const { setSlot } = useHeaderSlot();
+  const { setHeader } = useHeaderSlot();
 
   const days = useMemo(
     () => Array.from({ length: 14 }, (_, i) => addDays(startOfDay(new Date()), i)),
@@ -72,15 +72,12 @@ export default function UpcomingPage() {
   );
 
   useEffect(() => {
-    setSlot(
-      <>
-        <span className="text-sm font-semibold shrink-0">Upcoming</span>
-        <span className="text-xs text-muted-foreground shrink-0">Next 14 days</span>
-        <div className="flex-1" />
-      </>
-    );
-    return () => setSlot(null);
-  }, [setSlot]);
+    setHeader({
+      title: "Upcoming",
+      subtitle: "Next 14 days",
+    });
+    return () => setHeader(null);
+  }, [setHeader]);
 
   if (isLoading) {
     return (

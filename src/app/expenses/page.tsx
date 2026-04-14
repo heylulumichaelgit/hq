@@ -2,25 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Receipt, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import { useHeaderSlot } from "@/components/layout/header-slot-context";
 import { ReceiptCapture } from "@/features/expenses/components/receipt-capture";
 import { ExpenseList } from "@/features/expenses/components/expense-list";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function ExpensesPage() {
-  const { setSlot } = useHeaderSlot();
+  const { setHeader } = useHeaderSlot();
   const [dropboxConfigured, setDropboxConfigured] = useState<boolean | null>(null);
 
   useEffect(() => {
-    setSlot(
-      <div className="flex items-center gap-2">
-        <Receipt className="size-4 text-muted-foreground shrink-0" />
-        <span className="text-sm font-semibold">Expenses</span>
-      </div>
-    );
-    return () => setSlot(null);
-  }, [setSlot]);
+    setHeader({
+      title: "Expenses",
+      subtitle: "Receipts and spending",
+    });
+    return () => setHeader(null);
+  }, [setHeader]);
 
   // Check whether Dropbox is configured (fire-and-forget health check)
   useEffect(() => {

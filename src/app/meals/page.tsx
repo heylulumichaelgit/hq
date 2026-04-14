@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { format, startOfWeek, subWeeks, addWeeks, addDays, isThisWeek } from "date-fns";
-import { UtensilsCrossed, ChevronLeft, ChevronRight, Copy } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useHeaderSlot } from "@/components/layout/header-slot-context";
 import { WeekGrid } from "@/features/meals/components/week-grid";
@@ -12,7 +12,7 @@ import { useAuthStore } from "@/features/auth/store";
 import { toast } from "sonner";
 
 export default function MealsPage() {
-  const { setSlot } = useHeaderSlot();
+  const { setHeader } = useHeaderSlot();
   const { profile } = useAuthStore();
 
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() =>
@@ -64,11 +64,11 @@ export default function MealsPage() {
   }, [lastWeekMeals, currentWeekIso, upsert, profile]);
 
   useEffect(() => {
-    setSlot(
-      <div className="flex items-center gap-2 flex-1">
-        <UtensilsCrossed className="size-4 text-muted-foreground shrink-0" />
-        <span className="text-sm font-semibold">Meals</span>
-        <div className="ml-auto flex items-center gap-1">
+    setHeader({
+      title: "Meals",
+      subtitle: weekLabel,
+      actions: (
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
@@ -78,9 +78,6 @@ export default function MealsPage() {
           >
             <ChevronLeft className="size-4" />
           </Button>
-          <span className="text-xs text-muted-foreground min-w-[90px] text-center select-none">
-            {weekLabel}
-          </span>
           <Button
             variant="ghost"
             size="icon"
@@ -91,10 +88,10 @@ export default function MealsPage() {
             <ChevronRight className="size-4" />
           </Button>
         </div>
-      </div>
-    );
-    return () => setSlot(null);
-  }, [setSlot, handlePrevWeek, handleNextWeek, weekLabel]);
+      ),
+    });
+    return () => setHeader(null);
+  }, [setHeader, handlePrevWeek, handleNextWeek, weekLabel]);
 
   return (
     <motion.div

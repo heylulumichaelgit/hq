@@ -8,21 +8,28 @@ import {
   type ReactNode,
 } from "react";
 
+type HeaderConfig = {
+  title: string;
+  subtitle?: string;
+  actions?: ReactNode;
+};
+
 type HeaderSlotContextValue = {
-  slot: ReactNode;
-  setSlot: (node: ReactNode) => void;
+  header: HeaderConfig | null;
+  setHeader: (config: HeaderConfig | null) => void;
 };
 
 const HeaderSlotContext = createContext<HeaderSlotContextValue>({
-  slot: null,
-  setSlot: () => {},
+  header: null,
+  setHeader: () => {},
 });
 
 export function HeaderSlotProvider({ children }: { children: ReactNode }) {
-  const [slot, setSlotState] = useState<ReactNode>(null);
-  const setSlot = useCallback((node: ReactNode) => setSlotState(node), []);
+  const [header, setHeaderState] = useState<HeaderConfig | null>(null);
+  const setHeader = useCallback((config: HeaderConfig | null) => setHeaderState(config), []);
+
   return (
-    <HeaderSlotContext.Provider value={{ slot, setSlot }}>
+    <HeaderSlotContext.Provider value={{ header, setHeader }}>
       {children}
     </HeaderSlotContext.Provider>
   );

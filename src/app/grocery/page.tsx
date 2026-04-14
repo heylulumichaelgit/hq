@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart } from "lucide-react";
 import { GroceryInput, SuggestionBanner } from "@/features/grocery/components/grocery-input";
 import { GroceryList } from "@/features/grocery/components/grocery-list";
 import { useHeaderSlot } from "@/components/layout/header-slot-context";
@@ -10,20 +9,18 @@ import { useAddGroceryItems } from "@/features/grocery/queries";
 import { useAuthStore } from "@/features/auth/store";
 
 export default function GroceryPage() {
-  const { setSlot } = useHeaderSlot();
+  const { setHeader } = useHeaderSlot();
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const addItems = useAddGroceryItems();
   const { user } = useAuthStore();
 
   useEffect(() => {
-    setSlot(
-      <div className="flex items-center gap-2">
-        <ShoppingCart className="size-4 text-muted-foreground shrink-0" />
-        <span className="text-sm font-semibold">Grocery List</span>
-      </div>
-    );
-    return () => setSlot(null);
-  }, [setSlot]);
+    setHeader({
+      title: "Grocery",
+      subtitle: "Shared shopping list",
+    });
+    return () => setHeader(null);
+  }, [setHeader]);
 
   const handleAcceptSuggestion = useCallback(async (name: string) => {
     setSuggestions((prev) => prev.filter((s) => s !== name));

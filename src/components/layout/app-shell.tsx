@@ -21,12 +21,23 @@ import { InstallPrompt } from "@/components/install-prompt";
 import { RouteProgress } from "@/components/route-progress";
 
 function SiteHeader() {
-  const { slot } = useHeaderSlot();
+  const { header } = useHeaderSlot();
   return (
-    <header className="flex h-12 shrink-0 items-center border-b transition-[width,height] ease-linear">
-      <div className="flex w-full items-center gap-3 px-4 min-w-0">
+    <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center border-b bg-background/95 backdrop-blur transition-[width,height] ease-linear">
+      <div className="flex w-full items-center gap-3 px-4 min-w-0 md:px-6">
         <SidebarTrigger className="-ml-1 shrink-0" />
-        {slot && <div className="flex flex-1 items-center gap-3 min-w-0">{slot}</div>}
+        {header && (
+          <div className="flex flex-1 items-center gap-3 min-w-0">
+            <div className="min-w-0">
+              <div className="text-sm font-semibold truncate">{header.title}</div>
+              {header.subtitle && (
+                <div className="text-xs text-muted-foreground truncate">{header.subtitle}</div>
+              )}
+            </div>
+            <div className="flex-1" />
+            {header.actions && <div className="flex items-center gap-2">{header.actions}</div>}
+          </div>
+        )}
       </div>
     </header>
   );

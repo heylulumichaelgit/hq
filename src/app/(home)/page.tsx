@@ -237,7 +237,7 @@ function EventRow({ event }: { event: DisplayEvent }) {
 
 export default function DashboardPage() {
   const { profile } = useAuthStore();
-  const { setSlot } = useHeaderSlot();
+  const { setHeader } = useHeaderSlot();
   const { data: todos, isLoading: todosLoading } = useTodos();
   const { data: connectionStatus } = useConnectionStatus();
 
@@ -249,11 +249,12 @@ export default function DashboardPage() {
   const { data: googleEvents = [] } = useGoogleCalendarEvents(timeMin, timeMax);
 
   useEffect(() => {
-    setSlot(
-      <span className="text-sm font-semibold">Home</span>
-    );
-    return () => setSlot(null);
-  }, [setSlot]);
+    setHeader({
+      title: "Home",
+      subtitle: "Family overview",
+    });
+    return () => setHeader(null);
+  }, [setHeader]);
 
   const { overdueTodos, todayTodos } = useMemo(() => {
     if (!todos) return { overdueTodos: [], todayTodos: [] };

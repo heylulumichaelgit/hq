@@ -45,7 +45,7 @@ export default function TodayPage() {
   const { data: projects = [] } = useProjects();
   const todoLabelsMap = useAllTodoLabels();
   const commentCounts = useCommentCounts();
-  const { setSlot } = useHeaderSlot();
+  const { setHeader } = useHeaderSlot();
   const { setTodoFormOpen } = useCommandStore();
 
   const { overdue, todayByProject, totalCount, doneCount, totalMinutes, overdueCount, todayCount } = useMemo(() => {
@@ -97,13 +97,10 @@ export default function TodayPage() {
   }, [todos]);
 
   useEffect(() => {
-    setSlot(
-      <>
-        <span className="text-sm font-semibold shrink-0">Today</span>
-        <span className="text-xs text-muted-foreground shrink-0">
-          {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
-        </span>
-        <div className="flex-1" />
+    setHeader({
+      title: "Today",
+      subtitle: new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }),
+      actions: (
         <button
           onClick={() => setTodoFormOpen(true)}
           className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -111,10 +108,10 @@ export default function TodayPage() {
           <Plus className="h-4 w-4" />
           <span className="hidden sm:inline">Add task</span>
         </button>
-      </>
-    );
-    return () => setSlot(null);
-  }, [setSlot, setTodoFormOpen]);
+      ),
+    });
+    return () => setHeader(null);
+  }, [setHeader, setTodoFormOpen]);
 
   const allTodos = todos ?? [];
   const allDone = totalCount > 0 && doneCount === totalCount;

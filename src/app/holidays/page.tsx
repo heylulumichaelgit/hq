@@ -49,32 +49,29 @@ function HolidayGrid({ holidays }: { holidays: Holiday[] }) {
 }
 
 export default function HolidaysPage() {
-  const { setSlot } = useHeaderSlot();
+  const { setHeader } = useHeaderSlot();
   const { data: holidays, isLoading } = useHolidays();
   const [addOpen, setAddOpen] = useState(false);
   const [pastOpen, setPastOpen] = useState(false);
   const [cancelledOpen, setCancelledOpen] = useState(false);
 
   useEffect(() => {
-    setSlot(
-      <>
-        <div className="flex items-center gap-2 shrink-0">
-          <Plane className="size-4 text-muted-foreground" />
-          <span className="text-sm font-semibold">Holidays</span>
-        </div>
-        <div className="flex-1" />
+    setHeader({
+      title: "Holidays",
+      subtitle: "Trips and ideas",
+      actions: (
         <Button
           size="sm"
           className="gap-1.5 shrink-0"
           onClick={() => setAddOpen(true)}
         >
           <Plus className="size-3.5" />
-          Add Trip
+          Add trip
         </Button>
-      </>
-    );
-    return () => setSlot(null);
-  }, [setSlot]);
+      ),
+    });
+    return () => setHeader(null);
+  }, [setHeader]);
 
   const upcoming =
     holidays?.filter((h) => h.status === "planning" || h.status === "booked") ??

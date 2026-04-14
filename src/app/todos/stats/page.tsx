@@ -110,12 +110,15 @@ const cardVariants = {
 
 export default function StatsPage() {
   const { data: todos = [] } = useTodos();
-  const { setSlot } = useHeaderSlot();
+  const { setHeader } = useHeaderSlot();
 
   useEffect(() => {
-    setSlot(<span className="text-sm font-semibold">Stats</span>);
-    return () => setSlot(null);
-  }, [setSlot]);
+    setHeader({
+      title: "Stats",
+      subtitle: "Household trends",
+    });
+    return () => setHeader(null);
+  }, [setHeader]);
 
   const now = new Date();
   const thisWeekStart = startOfWeek(now, { weekStartsOn: 1 });

@@ -37,7 +37,7 @@ export default function CompletedPage() {
   const [activeFilter, setActiveFilter] = useState<PersonFilter>("All");
   const todoLabelsMap = useAllTodoLabels();
   const commentCounts = useCommentCounts();
-  const { setSlot } = useHeaderSlot();
+  const { setHeader } = useHeaderSlot();
 
   const { completedTodos, weekGroups } = useMemo(() => {
     if (!todos) return { completedTodos: [], weekGroups: [] };
@@ -74,10 +74,10 @@ export default function CompletedPage() {
   }, [todos, activeFilter]);
 
   useEffect(() => {
-    setSlot(
-      <>
-        <span className="text-sm font-semibold shrink-0">Completed</span>
-        <div className="flex-1" />
+    setHeader({
+      title: "Completed",
+      subtitle: "Archive",
+      actions: (
         <div className="flex items-center rounded-md border p-0.5 text-xs shrink-0">
           {PERSON_FILTERS.map((person) => (
             <button
@@ -93,10 +93,10 @@ export default function CompletedPage() {
             </button>
           ))}
         </div>
-      </>
-    );
-    return () => setSlot(null);
-  }, [setSlot, activeFilter]);
+      ),
+    });
+    return () => setHeader(null);
+  }, [setHeader, activeFilter]);
 
   const allTodos = todos ?? [];
   const now = startOfDay(new Date());
