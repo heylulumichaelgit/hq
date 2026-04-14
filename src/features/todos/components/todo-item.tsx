@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +20,6 @@ import {
   ListTree,
   ChevronRight,
   CheckCheck,
-  Repeat2,
   Check,
 } from "lucide-react";
 import {
@@ -36,7 +34,6 @@ import { cn } from "@/lib/utils";
 import { useState, useRef, useCallback } from "react";
 import { FamilyAvatar, familyAvatarMeta } from "@/components/family-avatar";
 import { InlineQuickAdd } from "./inline-quick-add";
-import { getRecurrenceLabel } from "@/lib/recurrence";
 import { TodoDetailSheet } from "./todo-detail-sheet";
 
 const priorityColors = {
@@ -368,35 +365,6 @@ export function TodoItem({ todo, allTodos, depth = 0, todoLabelsMap, commentCoun
 
             <AssigneeAvatar assignedTo={todo.assigned_to} />
 
-            {todo.section && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                {todo.section}
-              </Badge>
-            )}
-
-            {todoLabels.slice(0, 2).map((label) => (
-              <span
-                key={label.id}
-                className="inline-flex items-center gap-1 rounded-full px-2 py-0 text-[10px] font-medium border"
-                style={{
-                  backgroundColor: label.color + "18",
-                  borderColor: label.color + "40",
-                  color: label.color,
-                }}
-              >
-                {label.name}
-              </span>
-            ))}
-            {todoLabels.length > 2 && (
-              <span className="text-[10px] text-muted-foreground">+{todoLabels.length - 2}</span>
-            )}
-
-            {todo.recurrence_rule && (
-              <span className="flex items-center text-primary/70" title={getRecurrenceLabel(todo.recurrence_rule)}>
-                <Repeat2 className="h-3 w-3" />
-              </span>
-            )}
-
             {progress && progress.total > 0 && (
               <button
                 onClick={() => setSubtasksOpen((o) => !o)}
@@ -411,6 +379,15 @@ export function TodoItem({ todo, allTodos, depth = 0, todoLabelsMap, commentCoun
                 </motion.span>
                 <ListTree className="h-3 w-3" />
                 {progress.completed}/{progress.total}
+              </button>
+            )}
+
+            {(todo.section || todoLabels.length > 0 || todo.recurrence_rule) && (
+              <button
+                onClick={() => setShowDetail(true)}
+                className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Details
               </button>
             )}
           </div>

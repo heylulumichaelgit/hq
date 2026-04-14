@@ -4,11 +4,11 @@ import { useState, useEffect } from "react";
 import { LoginForm } from "@/features/auth/login-form";
 
 const QUOTES = [
-  { text: "A well-run home is a quiet superpower.", author: null },
-  { text: "Together is a wonderful place to be.", author: null },
-  { text: "The secret of a happy home is found in the small, daily things.", author: null },
-  { text: "Home: where your story begins.", author: null },
-  { text: "Small moments, big life.", author: null },
+  { text: "The best family systems disappear into the background.", author: null },
+  { text: "Calm is a product feature.", author: null },
+  { text: "A good home rhythm beats heroic catch-up.", author: null },
+  { text: "Less chaos. More life.", author: null },
+  { text: "What matters today should be obvious in seconds.", author: null },
 ];
 
 export default function LoginPage() {
@@ -48,7 +48,7 @@ export default function LoginPage() {
 
         {/* Bottom */}
         <p className="relative text-xs text-muted-foreground/40 tracking-wide">
-          Michael Family · Private
+          Family operating system
         </p>
       </div>
 

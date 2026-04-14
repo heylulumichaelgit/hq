@@ -44,7 +44,7 @@ export function LoginForm() {
       return;
     }
 
-    router.push("/todos");
+    router.push("/");
     router.refresh();
   };
 
@@ -54,7 +54,7 @@ export function LoginForm() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=/todos` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=/` },
     });
     if (error) {
       setError(error.message);
@@ -72,7 +72,7 @@ export function LoginForm() {
       {/* Heading */}
       <div className="mb-8 text-center md:text-left">
         <h2 className="text-3xl font-bold tracking-tight">Welcome back</h2>
-        <p className="mt-2 text-muted-foreground">Sign in to your family hub</p>
+        <p className="mt-2 text-muted-foreground">Sign in to today’s family command center</p>
       </div>
 
       {/* Google */}

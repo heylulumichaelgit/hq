@@ -475,8 +475,7 @@ export function CalendarView() {
           {isWeekLoading && view === "week" && (
             <span className="text-xs text-muted-foreground animate-pulse">Loading…</span>
           )}
-          {/* View toggle */}
-          <div className="flex items-center rounded-lg border p-0.5 gap-0.5">
+          <div className="hidden md:flex items-center rounded-lg border p-0.5 gap-0.5">
             <Button
               variant={view === "schedule" ? "secondary" : "ghost"}
               size="sm"
@@ -500,7 +499,7 @@ export function CalendarView() {
       </div>
 
       {/* Conditional view */}
-      {view === "schedule" ? (
+      {view === "schedule" || typeof window !== "undefined" && window.innerWidth < 768 ? (
         <ScheduleView />
       ) : (
         <>

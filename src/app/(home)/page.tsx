@@ -17,12 +17,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   CalendarDays,
-  ShoppingCart,
-  BarChart2,
-  Users,
-  Plane,
-  Receipt,
-  UtensilsCrossed,
   ChevronRight,
   Sun,
   Sunset,
@@ -31,7 +25,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
 import { useHeaderSlot } from "@/components/layout/header-slot-context";
 import { useTodos } from "@/features/todos/queries";
 import { useToggleTodo } from "@/features/todos/queries";
@@ -41,6 +34,8 @@ import { cn } from "@/lib/utils";
 import type { Todo } from "@/lib/supabase/types";
 import type { FamilyEvent, GoogleCalendarEvent } from "@/features/calendar/queries";
 import { ActivityFeed } from "@/features/home/activity-feed";
+import { HomeActionCenter } from "@/features/home/home-action-center";
+import { FirstRunCard } from "@/features/onboarding/components/first-run-card";
 
 // ── Greeting ─────────────────────────────────────────────────────────────────
 
@@ -91,17 +86,6 @@ function toDisplayEvents(
     .sort((a, b) => a.start.getTime() - b.start.getTime())
     .slice(0, 5);
 }
-
-// ── Quick links ───────────────────────────────────────────────────────────────
-
-const quickLinks = [
-  { href: "/grocery", label: "Grocery", icon: ShoppingCart, enabled: true },
-  { href: "/meals", label: "Meals", icon: UtensilsCrossed, enabled: true },
-  { href: "/todos/stats", label: "Stats", icon: BarChart2, enabled: true },
-  { href: "/services", label: "Services", icon: Users, enabled: true },
-  { href: "/holidays", label: "Holidays", icon: Plane, enabled: true },
-  { href: "/expenses", label: "Expenses", icon: Receipt, enabled: true },
-];
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
 
@@ -314,6 +298,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      <HomeActionCenter />
+
       {/* Stat cards */}
       <div className="grid grid-cols-3 gap-3">
         <StatCard
@@ -414,36 +400,9 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      <ActivityFeed />
+      <FirstRunCard />
 
-      {/* Quick links */}
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-          Quick access
-        </p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {quickLinks.map(({ href, label, icon: Icon, enabled }) =>
-            enabled ? (
-              <Link key={href} href={href}>
-                <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
-                  <CardContent className="p-4 flex items-center gap-3">
-                    <Icon className="size-4 text-muted-foreground shrink-0" />
-                    <span className="text-sm font-medium">{label}</span>
-                  </CardContent>
-                </Card>
-              </Link>
-            ) : (
-              <Card key={href} className="opacity-50">
-                <CardContent className="p-4 flex items-center gap-3">
-                  <Icon className="size-4 text-muted-foreground shrink-0" />
-                  <span className="text-sm font-medium">{label}</span>
-                  <span className="ml-auto text-[10px] text-muted-foreground">Soon</span>
-                </CardContent>
-              </Card>
-            )
-          )}
-        </div>
-      </div>
+      <ActivityFeed />
     </motion.div>
   );
 }

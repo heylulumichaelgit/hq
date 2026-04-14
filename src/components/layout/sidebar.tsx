@@ -4,25 +4,14 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  CheckSquare,
-  ShoppingCart,
-  Calendar,
-  Plane,
   LogOut,
   Sun,
   Moon,
   Plus,
   Pencil,
   Trash2,
-  Inbox,
-  Star,
-  BarChart2,
   CirclePlus,
   MoreHorizontal,
-  House,
-  Users,
-  Receipt,
-  UtensilsCrossed,
 } from "lucide-react";
 import { FamilyAvatar } from "@/components/family-avatar";
 import { Button } from "@/components/ui/button";
@@ -63,26 +52,7 @@ import {
   useDeleteProject,
   useUpdateProject,
 } from "@/features/projects/queries";
-
-const navMain = [
-  { href: "/", label: "Home", icon: House },
-  { href: "/todos/today", label: "Today", icon: Star },
-  { href: "/todos", label: "Inbox", icon: Inbox },
-  { href: "/todos/completed", label: "Completed", icon: CheckSquare },
-  { href: "/calendar", label: "Calendar", icon: Calendar },
-];
-
-const navBottom = [
-  { href: "/todos/stats", label: "Stats", icon: BarChart2 },
-];
-
-const navSecondary = [
-  { href: "/grocery", label: "Grocery List", icon: ShoppingCart, soon: false },
-  { href: "/meals", label: "Meal Planner", icon: UtensilsCrossed, soon: false },
-  { href: "/holidays", label: "Holidays", icon: Plane, soon: false },
-  { href: "/services", label: "Services", icon: Users, soon: false },
-  { href: "/expenses", label: "Expenses", icon: Receipt, soon: false },
-];
+import { primaryNav, planningNav, utilityNav } from "./nav-config";
 
 const PROJECT_COLORS = [
   "#C4956A", "#B5896E", "#C9B99A",
@@ -183,9 +153,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenu>
 
             <SidebarMenu>
-              {navMain.map((item) => {
+              {primaryNav.map((item) => {
                 const isActive =
-                  item.href === "/" || item.href === "/todos"
+                  item.href === "/"
                     ? pathname === item.href
                     : pathname === item.href ||
                       pathname.startsWith(item.href + "/");
@@ -355,29 +325,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* ── Household features ── */}
         <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-          <SidebarGroupLabel>Household</SidebarGroupLabel>
+          <SidebarGroupLabel>Planning</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navSecondary.map((item) => {
+              {planningNav.map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                 return (
                   <SidebarMenuItem key={item.href}>
-                    {item.soon ? (
-                      <SidebarMenuButton disabled className="opacity-50 cursor-not-allowed">
+                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.label}>
+                      <Link href={item.href}>
                         <item.icon className="size-4" />
                         <span>{item.label}</span>
-                        <span className="ml-auto text-[10px] text-muted-foreground">Soon</span>
-                      </SidebarMenuButton>
-                    ) : (
-                      <SidebarMenuButton asChild isActive={isActive} tooltip={item.label}>
-                        <Link href={item.href}>
-                          <item.icon className="size-4" />
-                          <span>{item.label}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    )}
+                      </Link>
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
               })}
@@ -385,12 +346,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* ── Stats (pinned to bottom) ── */}
         <SidebarGroup className="mt-auto group-data-[collapsible=icon]:hidden">
+          <SidebarGroupLabel>Utilities</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navBottom.map((item) => {
-                const isActive = pathname === item.href;
+              {utilityNav.map((item) => {
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton asChild isActive={isActive} tooltip={item.label}>
