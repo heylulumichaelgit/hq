@@ -13,6 +13,8 @@ import { useHeaderSlot } from "@/components/layout/header-slot-context";
 import { useHolidays } from "@/features/holidays/queries";
 import { HolidayCard } from "@/features/holidays/components/holiday-card";
 import { HolidayFormDialog } from "@/features/holidays/components/holiday-form-dialog";
+import { HolidayPlanningSummary } from "@/features/holidays/components/holiday-planning-summary";
+import { HolidayIdeasBoard } from "@/features/holidays/components/holiday-ideas-board";
 import type { Holiday } from "@/features/holidays/queries";
 
 const cardVariants = {
@@ -125,6 +127,10 @@ export default function HolidaysPage() {
             </Button>
           </div>
         )}
+
+        {hasAny && holidays && <HolidayPlanningSummary holidays={holidays} />}
+
+        {holidays && <HolidayIdeasBoard holidays={holidays} />}
 
         {/* Upcoming section */}
         {sortedUpcoming.length > 0 && (

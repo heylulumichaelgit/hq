@@ -34,6 +34,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useState, useRef, useCallback } from "react";
+import { FamilyAvatar, familyAvatarMeta } from "@/components/family-avatar";
 import { InlineQuickAdd } from "./inline-quick-add";
 import { getRecurrenceLabel } from "@/lib/recurrence";
 import { TodoDetailSheet } from "./todo-detail-sheet";
@@ -59,29 +60,19 @@ const priorityColors = {
   },
 };
 
-const personColors: Record<string, { bg: string; text: string }> = {
-  Andrew: { bg: "bg-stone-200 dark:bg-stone-700/50", text: "text-stone-700 dark:text-stone-300" },
-  Chrystalla: { bg: "bg-amber-100 dark:bg-amber-900/40", text: "text-amber-800 dark:text-amber-300" },
-  Lulu: { bg: "bg-rose-100 dark:bg-rose-900/30", text: "text-rose-700 dark:text-rose-300" },
-};
-
 function AssigneeAvatar({ assignedTo }: { assignedTo: string }) {
   const people = parseAssignees(assignedTo);
   return (
     <span className="inline-flex items-center gap-0.5 shrink-0">
       {people.map((person) => {
-        const colors = personColors[person] ?? { bg: "bg-muted", text: "text-muted-foreground" };
+        const meta = familyAvatarMeta(person);
         return (
-          <span
+          <FamilyAvatar
             key={person}
-            className={cn(
-              "inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold",
-              colors.bg,
-              colors.text
-            )}
-          >
-            {person.charAt(0)}
-          </span>
+            name={person}
+            className="h-4 w-4"
+            fallbackClassName={`text-[9px] font-bold ${meta.colors}`}
+          />
         );
       })}
     </span>

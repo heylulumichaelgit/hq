@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { FamilyAvatar } from "@/components/family-avatar";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useToggleGroceryItem, useDeleteGroceryItem } from "../queries";
@@ -146,11 +146,11 @@ export function GroceryItemRow({ item, addedByName }: GroceryItemRowProps) {
         </div>
 
         {addedByName && (
-          <Avatar className="size-5 shrink-0">
-            <AvatarFallback className="text-[10px] bg-primary/15 text-primary font-semibold">
-              {addedByName.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
+          <FamilyAvatar
+            name={addedByName}
+            className="size-5 shrink-0"
+            fallbackClassName="text-[10px] font-semibold"
+          />
         )}
 
         <Button

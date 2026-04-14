@@ -24,7 +24,7 @@ import {
   Receipt,
   UtensilsCrossed,
 } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { FamilyAvatar } from "@/components/family-avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -417,11 +417,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   size="lg"
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarFallback className="rounded-lg bg-primary/20 text-primary text-sm font-bold">
-                      {profile?.display_name?.charAt(0) ?? "?"}
-                    </AvatarFallback>
-                  </Avatar>
+                  <FamilyAvatar
+                    name={profile?.display_name}
+                    avatarUrl={profile?.avatar_url}
+                    className="h-8 w-8 rounded-lg"
+                    fallbackClassName="rounded-lg text-sm font-bold"
+                  />
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">
                       {profile?.display_name ?? "Loading…"}
@@ -441,11 +442,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               >
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                    <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarFallback className="rounded-lg bg-primary/20 text-primary text-sm font-bold">
-                        {profile?.display_name?.charAt(0) ?? "?"}
-                      </AvatarFallback>
-                    </Avatar>
+                    <FamilyAvatar
+                      name={profile?.display_name}
+                      avatarUrl={profile?.avatar_url}
+                      className="h-8 w-8 rounded-lg"
+                      fallbackClassName="rounded-lg text-sm font-bold"
+                    />
                     <div className="grid flex-1 text-left text-sm leading-tight">
                       <span className="truncate font-medium">
                         {profile?.display_name}
