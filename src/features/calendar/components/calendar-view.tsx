@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import {
   format,
   addDays,
@@ -13,6 +15,7 @@ import {
 import { useCalendarStore } from "../store";
 import { useGoogleCalendarEvents, useFamilyEvents } from "../queries";
 import type { GoogleCalendarEvent, FamilyEvent } from "../queries";
+import type { Profile } from "@/lib/supabase/types";
 import { useTodos } from "@/features/todos/queries";
 import type { Todo } from "@/lib/supabase/types";
 import { List, CalendarDays, Loader2, Square } from "lucide-react";
@@ -34,6 +37,7 @@ const TODO_PRIORITY_COLOR: Record<string, string> = {
 };
 
 type DisplayEvent = {
+  id: string;
   key: string;
   title: string;
   start: Date;
@@ -48,8 +52,28 @@ type DisplayEvent = {
   priority?: string;
 };
 
+type CalendarLane = {
+  userId: string;
+  label: string;
+  color: string;
+};
+
+function useProfileMap() {
+  return useQuery<Record<string, Pick<Profile, "display_name">>>({
+    queryKey: ["profiles", "calendar-view"],
+    staleTime: 10 * 60_000,
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase.from("profiles").select("id, display_name");
+      if (error) throw error;
+      return Object.fromEntries((data ?? []).map((profile) => [profile.id, profile]));
+    },
+  });
+}
+
 function toDisplayEvent(e: GoogleCalendarEvent): DisplayEvent {
   return {
+    id: e.id,
     key: `google-${e.id}`,
     title: e.title,
     start: parseISO(e.start),
@@ -64,6 +88,7 @@ function toDisplayEvent(e: GoogleCalendarEvent): DisplayEvent {
 
 function toDisplayFamilyEvent(e: FamilyEvent): DisplayEvent {
   return {
+    id: e.id,
     key: `family-${e.id}`,
     title: e.title,
     start: parseISO(e.start_at),
@@ -79,6 +104,7 @@ function toDisplayFamilyEvent(e: FamilyEvent): DisplayEvent {
 function toDisplayTodo(t: Todo): DisplayEvent {
   const day = startOfDay(new Date(t.due_date! + "T00:00:00"));
   return {
+    id: t.id,
     key: `todo-${t.id}`,
     title: t.title,
     start: day,
@@ -141,6 +167,7 @@ function ScheduleView() {
   const { data: familyEvents = [], isLoading: loadingFamily } =
     useFamilyEvents(timeMin, timeMax);
   const { data: todos = [] } = useTodos();
+  const { data: profileMap = {} } = useProfileMap();
 
   const isLoading = loadingGoogle || loadingFamily;
 
@@ -307,6 +334,40 @@ function EventChip({ event, onClick }: EventChipProps) {
   );
 }
 
+function WeekLaneColumn({
+  day,
+  lane,
+  events,
+  onClick,
+}: {
+  day: Date;
+  lane: CalendarLane;
+  events: DisplayEvent[];
+  onClick: (event: DisplayEvent) => void;
+}) {
+  const dayEvents = events.filter(
+    (event) =>
+      !event.allDay &&
+      isSameDay(event.start, day) &&
+      (event.userLabel === lane.label || (event.source === "family" && lane.userId === "family"))
+  );
+
+  return (
+    <div className="relative border-r last:border-r-0 min-w-[120px]">
+      {Array.from({ length: TOTAL_HOURS }, (_, index) => HOUR_START + index).map((hour) => (
+        <div
+          key={hour}
+          className="absolute left-0 right-0 border-t border-border/50"
+          style={{ top: (hour - HOUR_START) * HOUR_HEIGHT }}
+        />
+      ))}
+      {dayEvents.map((event) => (
+        <EventChip key={`${lane.userId}-${event.key}`} event={event} onClick={onClick} />
+      ))}
+    </div>
+  );
+}
+
 // ─── Main CalendarView ────────────────────────────────────────────────────────
 
 export function CalendarView() {
@@ -322,6 +383,7 @@ export function CalendarView() {
   const { data: familyEvents = [], isLoading: loadingFamily } =
     useFamilyEvents(timeMin, timeMax);
   const { data: todos = [] } = useTodos();
+  const { data: profileMap = {} } = useProfileMap();
 
   const days = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
@@ -358,6 +420,38 @@ export function CalendarView() {
   }
 
   const isWeekLoading = loadingGoogle || loadingFamily;
+
+  const lanes = useMemo<CalendarLane[]>(() => {
+    const laneMap = new Map<string, CalendarLane>();
+
+    Object.entries(profileMap).forEach(([id, profile]) => {
+      laneMap.set(id, {
+        userId: id,
+        label: profile.display_name,
+        color: "#6b7280",
+      });
+    });
+
+    googleEvents.forEach((event) => {
+      laneMap.set(event.userId, {
+        userId: event.userId,
+        label: event.userDisplayName,
+        color: event.userColor,
+      });
+    });
+
+    laneMap.set("family", {
+      userId: "family",
+      label: "Family",
+      color: "#8FA48A",
+    });
+
+    return Array.from(laneMap.values()).sort((a, b) => {
+      if (a.userId === "family") return 1;
+      if (b.userId === "family") return -1;
+      return a.label.localeCompare(b.label);
+    });
+  }, [googleEvents, profileMap]);
 
   return (
     <div className="flex flex-col h-full">
@@ -410,27 +504,41 @@ export function CalendarView() {
         <ScheduleView />
       ) : (
         <>
-          {/* Day headers */}
-          <div className="grid grid-cols-[40px_repeat(7,1fr)] border-b">
+          {/* Day + lane headers */}
+          <div className="grid grid-cols-[40px_repeat(7,minmax(0,1fr))] border-b">
             <div />
             {days.map((day) => (
-              <div
-                key={day.toISOString()}
-                className={cn(
-                  "py-2 text-center text-xs font-medium",
-                  isToday(day) && "text-primary"
-                )}
-              >
-                <div className="uppercase tracking-wide text-muted-foreground text-[10px]">
-                  {format(day, "EEE")}
-                </div>
+              <div key={day.toISOString()} className="border-r last:border-r-0">
                 <div
                   className={cn(
-                    "mx-auto mt-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold",
-                    isToday(day) && "bg-primary text-primary-foreground"
+                    "py-2 text-center text-xs font-medium",
+                    isToday(day) && "text-primary"
                   )}
                 >
-                  {format(day, "d")}
+                  <div className="uppercase tracking-wide text-muted-foreground text-[10px]">
+                    {format(day, "EEE")}
+                  </div>
+                  <div
+                    className={cn(
+                      "mx-auto mt-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold",
+                      isToday(day) && "bg-primary text-primary-foreground"
+                    )}
+                  >
+                    {format(day, "d")}
+                  </div>
+                </div>
+                <div className="grid" style={{ gridTemplateColumns: `repeat(${lanes.length}, minmax(120px, 1fr))` }}>
+                  {lanes.map((lane) => (
+                    <div
+                      key={`${day.toISOString()}-${lane.userId}`}
+                      className="border-t border-r last:border-r-0 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                    >
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="size-2 rounded-full" style={{ backgroundColor: lane.color }} />
+                        {lane.label}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
@@ -438,39 +546,46 @@ export function CalendarView() {
 
           {/* All-day row */}
           {allDayEvents.length > 0 && (
-            <div className="grid grid-cols-[40px_repeat(7,1fr)] border-b py-1">
+            <div className="grid grid-cols-[40px_repeat(7,minmax(0,1fr))] border-b py-1">
               <div className="flex items-start justify-end pr-2 pt-1">
                 <span className="text-[9px] text-muted-foreground">all day</span>
               </div>
               {days.map((day) => (
-                <div key={day.toISOString()} className="relative px-0.5 min-h-[24px]">
-                  {eventsForDay(day, allDayEvents).map((e) => (
-                    <button
-                      key={e.key}
-                      onClick={() => setSelectedEvent(e)}
-                      className="mb-0.5 w-full truncate rounded px-1 py-0.5 text-[10px] font-medium flex items-center gap-1 text-left hover:brightness-95 transition-[filter]"
-                      style={{
-                        backgroundColor: e.color + "22",
-                        borderLeft: `3px solid ${e.color}`,
-                        color: e.color,
-                      }}
-                    >
-                      {e.source === "todo" && <Square className="h-2 w-2 shrink-0" strokeWidth={2.5} />}
-                      <span className="truncate">{e.title}</span>
-                    </button>
-                  ))}
+                <div key={day.toISOString()} className="border-r last:border-r-0">
+                  <div className="grid px-0.5" style={{ gridTemplateColumns: `repeat(${lanes.length}, minmax(120px, 1fr))` }}>
+                    {lanes.map((lane) => {
+                      const laneEvents = eventsForDay(day, allDayEvents).filter(
+                        (event) => event.userLabel === lane.label || (event.source === "family" && lane.userId === "family")
+                      );
+                      return (
+                        <div key={`${day.toISOString()}-${lane.userId}-all-day`} className="min-h-[24px] border-r last:border-r-0 px-0.5">
+                          {laneEvents.map((e) => (
+                            <button
+                              key={`${lane.userId}-${e.key}`}
+                              onClick={() => setSelectedEvent(e)}
+                              className="mb-0.5 w-full truncate rounded px-1 py-0.5 text-[10px] font-medium flex items-center gap-1 text-left hover:brightness-95 transition-[filter]"
+                              style={{
+                                backgroundColor: e.color + "22",
+                                borderLeft: `3px solid ${e.color}`,
+                                color: e.color,
+                              }}
+                            >
+                              {e.source === "todo" && <Square className="h-2 w-2 shrink-0" strokeWidth={2.5} />}
+                              <span className="truncate">{e.title}</span>
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               ))}
             </div>
           )}
 
           {/* Scrollable time grid */}
-          <div className="overflow-y-auto overflow-x-auto" style={{ maxHeight: "calc(100vh - 280px)" }}>
-            <div
-              className="grid grid-cols-[40px_repeat(7,minmax(80px,1fr))]"
-              style={{ height: TOTAL_HOURS * HOUR_HEIGHT }}
-            >
-              {/* Hour labels */}
+          <div className="overflow-y-auto overflow-x-auto" style={{ maxHeight: "calc(100vh - 320px)" }}>
+            <div className="grid grid-cols-[40px_repeat(7,minmax(0,1fr))]" style={{ height: TOTAL_HOURS * HOUR_HEIGHT }}>
               <div className="relative border-r">
                 {hours.map((h) => (
                   <div
@@ -483,29 +598,22 @@ export function CalendarView() {
                 ))}
               </div>
 
-              {/* Day columns */}
               {days.map((day) => (
                 <div
                   key={day.toISOString()}
-                  className={cn(
-                    "relative border-r",
-                    isToday(day) && "bg-primary/5"
-                  )}
+                  className={cn("border-r last:border-r-0", isToday(day) && "bg-primary/5")}
                 >
-                  {hours.map((h) => (
-                    <div
-                      key={h}
-                      className="absolute left-0 right-0 border-t border-border/50"
-                      style={{ top: (h - HOUR_START) * HOUR_HEIGHT }}
-                    />
-                  ))}
-                  {eventsForDay(day, timedEvents).map((e) => (
-                    <EventChip
-                      key={e.key}
-                      event={e}
-                      onClick={setSelectedEvent}
-                    />
-                  ))}
+                  <div className="grid h-full" style={{ gridTemplateColumns: `repeat(${lanes.length}, minmax(120px, 1fr))` }}>
+                    {lanes.map((lane) => (
+                      <WeekLaneColumn
+                        key={`${day.toISOString()}-${lane.userId}`}
+                        day={day}
+                        lane={lane}
+                        events={timedEvents}
+                        onClick={setSelectedEvent}
+                      />
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>

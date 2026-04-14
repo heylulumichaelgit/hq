@@ -3,10 +3,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import type { GroceryItem, GroceryItemInsert, GroceryItemUpdate } from "@/lib/supabase/types";
+import type { GroceryItem, GroceryItemInsert, GroceryItemUpdate, GroceryStaple, GroceryStapleInsert } from "@/lib/supabase/types";
 import { useRealtimeSync } from "@/hooks/use-realtime-sync";
 
 export const GROCERY_KEY = ["grocery_items"];
+export const GROCERY_STAPLES_KEY = ["grocery_staples"];
 
 export function useGroceryItems() {
   useRealtimeSync({
@@ -192,5 +193,89 @@ export function useClearCheckedItems() {
       queryClient.setQueryData(GROCERY_KEY, context?.previousItems ?? []);
       toast.error("Failed to clear items");
     },
+  });
+}
+
+export function useGroceryStaples() {
+  useRealtimeSync({
+    table: "grocery_staples",
+    queryKey: GROCERY_STAPLES_KEY,
+    channelName: "grocery-staples-realtime",
+    userIdColumn: "added_by",
+  });
+
+  return useQuery<GroceryStaple[]>({
+    queryKey: GROCERY_STAPLES_KEY,
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("grocery_staples")
+        .select("*")
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as GroceryStaple[];
+    },
+  });
+}
+
+export function useCreateGroceryStaple() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (staple: GroceryStapleInsert) => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("grocery_staples")
+        .upsert(staple, { onConflict: "name,unit,notes" })
+        .select()
+        .single();
+      if (error) throw error;
+      return data as GroceryStaple;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: GROCERY_STAPLES_KEY });
+      toast.success("Staple saved");
+    },
+    onError: () => toast.error("Failed to save staple"),
+  });
+}
+
+export function useDeleteGroceryStaple() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const supabase = createClient();
+      const { error } = await supabase.from("grocery_staples").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: GROCERY_STAPLES_KEY });
+      toast.success("Staple removed");
+    },
+    onError: () => toast.error("Failed to remove staple"),
+  });
+}
+
+export function useAddStaplesToGrocery() {
+  const addItems = useAddGroceryItems();
+  return useMutation({
+    mutationFn: async ({ staples, addedBy }: { staples: GroceryStaple[]; addedBy?: string | null }) => {
+      const basePosition = Math.floor(Date.now() / 1000);
+      return addItems.mutateAsync(
+        staples.map((staple, index) => ({
+          name: staple.name,
+          category: staple.category,
+          quantity: staple.quantity,
+          unit: staple.unit,
+          notes: staple.notes,
+          is_checked: false,
+          added_by: addedBy ?? staple.added_by ?? null,
+          position: basePosition + index,
+        }))
+      );
+    },
+    onSuccess: (_data, variables) => {
+      toast.success(`${variables.staples.length} staple${variables.staples.length === 1 ? "" : "s"} added`);
+    },
+    onError: () => toast.error("Failed to add staples"),
   });
 }

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ShoppingCart, CheckCheck } from "lucide-react";
+import { GroceryStaplesPanel } from "./grocery-staples-panel";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -80,22 +81,25 @@ export function GroceryList() {
     <div className="space-y-1">
       {/* Progress */}
       {totalCount > 0 && (
-        <div className="flex items-center justify-between pb-2">
+        <div className="flex items-center justify-between gap-2 pb-2">
           <span className="text-xs text-muted-foreground">
             {checkedCount} / {totalCount} collected
           </span>
-          {checkedCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-              onClick={() => clearChecked.mutate()}
-              disabled={clearChecked.isPending}
-            >
-              <CheckCheck className="size-3.5" />
-              Clear checked
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <GroceryStaplesPanel />
+            {checkedCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => clearChecked.mutate()}
+                disabled={clearChecked.isPending}
+              >
+                <CheckCheck className="size-3.5" />
+                Clear checked
+              </Button>
+            )}
+          </div>
         </div>
       )}
 

@@ -330,6 +330,41 @@ export interface Database {
           created_at?: string;
         };
       };
+      grocery_staples: {
+        Row: {
+          id: string;
+          name: string;
+          category: string;
+          quantity: number | null;
+          unit: string | null;
+          notes: string | null;
+          added_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          category?: string;
+          quantity?: number | null;
+          unit?: string | null;
+          notes?: string | null;
+          added_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          category?: string;
+          quantity?: number | null;
+          unit?: string | null;
+          notes?: string | null;
+          added_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       service_partners: {
         Row: {
           id: string;
@@ -529,3 +564,6 @@ export type FamilyEventInsert = Database["public"]["Tables"]["family_events"]["I
 export type GroceryItem = Database["public"]["Tables"]["grocery_items"]["Row"];
 export type GroceryItemInsert = Database["public"]["Tables"]["grocery_items"]["Insert"];
 export type GroceryItemUpdate = Database["public"]["Tables"]["grocery_items"]["Update"];
+export type GroceryStaple = Database["public"]["Tables"]["grocery_staples"]["Row"];
+export type GroceryStapleInsert = Database["public"]["Tables"]["grocery_staples"]["Insert"];
+export type GroceryStapleUpdate = Database["public"]["Tables"]["grocery_staples"]["Update"];
