@@ -1,6 +1,37 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+const GET_USER_TIMEOUT_MS = 3000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error(`middleware.getUser timed out after ${ms}ms`)),
+      ms
+    );
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
+}
+
+function isAuthPath(pathname: string): boolean {
+  return (
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/reset-password") ||
+    pathname.startsWith("/api/")
+  );
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -33,17 +64,30 @@ export async function updateSession(request: NextRequest) {
   );
 
   // getUser() validates the JWT and triggers token refresh if expired.
-  // The refreshed tokens are written back via setAll → supabaseResponse cookies.
-  const { data: { user } } = await supabase.auth.getUser();
+  // Race it against a deadline so a hung upstream doesn't wedge the edge.
+  // On timeout we fall through without treating the request as signed-out —
+  // the client-side AuthProvider will handle redirect if the session is
+  // actually gone. This is strictly better than the old "hang for 30s until
+  // Vercel kills the edge function" behavior, even though it means a brief
+  // stale render on the next request if Supabase was actually down.
+  let user = null;
+  try {
+    const result = await withTimeout(
+      supabase.auth.getUser(),
+      GET_USER_TIMEOUT_MS
+    );
+    user = result.data.user;
+  } catch (error) {
+    console.error(
+      `[middleware] getUser failed for ${request.nextUrl.pathname}:`,
+      error
+    );
+    if (!isAuthPath(request.nextUrl.pathname)) {
+      return supabaseResponse;
+    }
+  }
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth") &&
-    !request.nextUrl.pathname.startsWith("/forgot-password") &&
-    !request.nextUrl.pathname.startsWith("/reset-password") &&
-    !request.nextUrl.pathname.startsWith("/api/")
-  ) {
+  if (!user && !isAuthPath(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

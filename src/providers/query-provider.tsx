@@ -23,7 +23,9 @@ function createQueryClient() {
       queries: {
         staleTime: 60 * 1000,
         gcTime: 1000 * 60 * 60 * 24,
-        refetchOnWindowFocus: false,
+        // Refetch when the PWA resumes from background so stale data refreshes.
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
         retry: 1,
         networkMode: "offlineFirst",
       },

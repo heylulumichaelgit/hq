@@ -3,6 +3,7 @@ import { Inter, Playfair_Display, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { AuthProvider } from "@/features/auth/auth-provider";
+import { BootGate } from "@/features/auth/boot-gate";
 import { ServiceWorkerRegister } from "@/components/sw-register";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
@@ -59,7 +60,7 @@ export default function RootLayout({
           <QueryProvider>
             <AuthProvider>
               <TooltipProvider>
-                {children}
+                <BootGate>{children}</BootGate>
               </TooltipProvider>
               <ServiceWorkerRegister />
               <Toaster position="bottom-right" richColors closeButton />

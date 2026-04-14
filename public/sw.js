@@ -1,4 +1,4 @@
-const CACHE_NAME = "michael-family-v4";
+const CACHE_NAME = "michael-family-v5";
 const STATIC_ASSETS = ["/manifest.json", "/offline.html"];
 
 self.addEventListener("install", (event) => {
