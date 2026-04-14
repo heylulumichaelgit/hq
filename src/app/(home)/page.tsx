@@ -40,6 +40,7 @@ import { useAuthStore } from "@/features/auth/store";
 import { cn } from "@/lib/utils";
 import type { Todo } from "@/lib/supabase/types";
 import type { FamilyEvent, GoogleCalendarEvent } from "@/features/calendar/queries";
+import { ActivityFeed } from "@/features/home/activity-feed";
 
 // ── Greeting ─────────────────────────────────────────────────────────────────
 
@@ -412,6 +413,8 @@ export default function DashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      <ActivityFeed />
 
       {/* Quick links */}
       <div>
