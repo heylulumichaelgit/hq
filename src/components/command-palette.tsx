@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   House,
@@ -13,6 +13,12 @@ import {
   CalendarPlus,
   Search,
   ChevronRight,
+  ShoppingCart,
+  Users,
+  UtensilsCrossed,
+  FolderKanban,
+  Clock3,
+  Sparkles,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -27,6 +33,15 @@ import {
 import { useCommandStore } from "@/lib/command-store";
 import { useTodos } from "@/features/todos/queries";
 import { useProjects } from "@/features/projects/queries";
+import { useGroceryItems } from "@/features/grocery/queries";
+import { useServices } from "@/features/services/queries";
+import { useMealPlans } from "@/features/meals/queries";
+import { useFamilyEvents } from "@/features/calendar/queries";
+import { startOfWeek, endOfWeek, format } from "date-fns";
+
+function searchable(text: string | null | undefined) {
+  return text?.toLowerCase().trim() ?? "";
+}
 
 export function CommandPalette() {
   const router = useRouter();
@@ -34,8 +49,19 @@ export function CommandPalette() {
     useCommandStore();
   const { data: todos = [] } = useTodos();
   const { data: projects = [] } = useProjects();
+  const { data: groceryItems = [] } = useGroceryItems();
+  const { data: services = [] } = useServices();
 
-  // Register global shortcuts
+  const currentWeekStart = useMemo(
+    () => startOfWeek(new Date(), { weekStartsOn: 1 }),
+    []
+  );
+  const weekStart = format(currentWeekStart, "yyyy-MM-dd");
+  const weekEnd = format(endOfWeek(currentWeekStart, { weekStartsOn: 1 }), "yyyy-MM-dd");
+
+  const { data: mealPlans = [] } = useMealPlans(weekStart);
+  const { data: familyEvents = [] } = useFamilyEvents(weekStart, weekEnd);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
@@ -43,12 +69,10 @@ export function CommandPalette() {
         e.preventDefault();
         setPaletteOpen(true);
       }
-      // ⌘T / Ctrl+T — new task (only when palette not already open)
       if (mod && e.key === "t" && !paletteOpen) {
         e.preventDefault();
         setTodoFormOpen(true);
       }
-      // ⌘E / Ctrl+E — new event
       if (mod && e.key === "e" && !paletteOpen) {
         e.preventDefault();
         setEventFormOpen(true);
@@ -61,7 +85,6 @@ export function CommandPalette() {
   const run = useCallback(
     (fn: () => void) => {
       setPaletteOpen(false);
-      // Slight delay so the dialog closes before the next one opens
       setTimeout(fn, 50);
     },
     [setPaletteOpen]
@@ -75,20 +98,34 @@ export function CommandPalette() {
     [setPaletteOpen, router]
   );
 
-  const topTodos = todos
-    .filter((t) => !t.is_completed && !t.parent_id)
-    .slice(0, 8);
+  const taskResults = useMemo(
+    () =>
+      todos
+        .filter((t) => !t.parent_id)
+        .slice()
+        .sort((a, b) => Number(a.is_completed) - Number(b.is_completed))
+        .slice(0, 12),
+    [todos]
+  );
+
+  const groceryResults = useMemo(
+    () => groceryItems.slice(0, 10),
+    [groceryItems]
+  );
+
+  const serviceResults = useMemo(() => services.slice(0, 10), [services]);
+  const mealResults = useMemo(() => mealPlans.slice(0, 10), [mealPlans]);
+  const eventResults = useMemo(() => familyEvents.slice(0, 10), [familyEvents]);
 
   return (
     <CommandDialog open={paletteOpen} onOpenChange={setPaletteOpen} showCloseButton={false}>
-      <CommandInput placeholder="Search or jump to..." />
-      <CommandList className="max-h-[400px]">
+      <CommandInput placeholder="Search tasks, grocery, meals, services, calendar..." />
+      <CommandList className="max-h-[500px]">
         <CommandEmpty>
           <Search className="size-8 mx-auto mb-2 text-muted-foreground/40" />
           No results found.
         </CommandEmpty>
 
-        {/* Quick actions */}
         <CommandGroup heading="Create">
           <CommandItem onSelect={() => run(() => setTodoFormOpen(true))}>
             <Plus />
@@ -104,7 +141,6 @@ export function CommandPalette() {
 
         <CommandSeparator />
 
-        {/* Navigation */}
         <CommandGroup heading="Go to">
           <CommandItem onSelect={() => navigate("/")}>
             <House />
@@ -118,13 +154,21 @@ export function CommandPalette() {
             <Inbox />
             Inbox
           </CommandItem>
-          <CommandItem onSelect={() => navigate("/todos/completed")}>
-            <CheckSquare />
-            Completed
+          <CommandItem onSelect={() => navigate("/grocery")}>
+            <ShoppingCart />
+            Grocery List
           </CommandItem>
           <CommandItem onSelect={() => navigate("/calendar")}>
             <Calendar />
             Calendar
+          </CommandItem>
+          <CommandItem onSelect={() => navigate("/meals")}>
+            <UtensilsCrossed />
+            Meals
+          </CommandItem>
+          <CommandItem onSelect={() => navigate("/services")}>
+            <Users />
+            Services
           </CommandItem>
           <CommandItem onSelect={() => navigate("/todos/stats")}>
             <BarChart2 />
@@ -132,7 +176,6 @@ export function CommandPalette() {
           </CommandItem>
         </CommandGroup>
 
-        {/* Projects */}
         {projects.length > 0 && (
           <>
             <CommandSeparator />
@@ -140,6 +183,7 @@ export function CommandPalette() {
               {projects.map((p) => (
                 <CommandItem
                   key={p.id}
+                  value={`project ${p.name}`}
                   onSelect={() => navigate(`/todos/project/${p.id}`)}
                 >
                   <span
@@ -154,16 +198,17 @@ export function CommandPalette() {
           </>
         )}
 
-        {/* Todo search */}
-        {topTodos.length > 0 && (
+        {taskResults.length > 0 && (
           <>
             <CommandSeparator />
             <CommandGroup heading="Tasks">
-              {topTodos.map((t) => (
+              {taskResults.map((t) => (
                 <CommandItem
                   key={t.id}
-                  value={t.title}
-                  onSelect={() => navigate("/todos/today")}
+                  value={`task ${t.title} ${searchable(t.description)} ${searchable(t.assigned_to)} ${searchable(t.section)}`}
+                  onSelect={() =>
+                    navigate(t.project_id ? `/todos/project/${t.project_id}` : "/todos")
+                  }
                   className="flex items-center gap-2"
                 >
                   <span
@@ -176,11 +221,110 @@ export function CommandPalette() {
                     }`}
                   />
                   <span className="truncate">{t.title}</span>
+                  {t.is_completed && (
+                    <span className="ml-auto text-[10px] uppercase text-muted-foreground">done</span>
+                  )}
                 </CommandItem>
               ))}
             </CommandGroup>
           </>
         )}
+
+        {groceryResults.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Grocery">
+              {groceryResults.map((item) => (
+                <CommandItem
+                  key={item.id}
+                  value={`grocery ${item.name} ${searchable(item.category)} ${searchable(item.notes)}`}
+                  onSelect={() => navigate("/grocery")}
+                >
+                  <ShoppingCart />
+                  <span className="truncate">{item.name}</span>
+                  <span className="ml-auto text-[10px] uppercase text-muted-foreground">
+                    {item.category}
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        )}
+
+        {mealResults.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Meals">
+              {mealResults.map((meal) => (
+                <CommandItem
+                  key={meal.id}
+                  value={`meal ${meal.title} ${searchable(meal.notes)} ${searchable(meal.meal_type)}`}
+                  onSelect={() => navigate("/meals")}
+                >
+                  <UtensilsCrossed />
+                  <span className="truncate">{meal.title}</span>
+                  <span className="ml-auto text-[10px] uppercase text-muted-foreground">
+                    {meal.meal_type}
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        )}
+
+        {serviceResults.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Services">
+              {serviceResults.map((service) => (
+                <CommandItem
+                  key={service.id}
+                  value={`service ${service.name} ${searchable(service.category)} ${searchable(service.notes)} ${searchable(service.email)} ${searchable(service.phone)}`}
+                  onSelect={() => navigate("/services")}
+                >
+                  <Users />
+                  <span className="truncate">{service.name}</span>
+                  {service.is_favourite ? (
+                    <Sparkles className="ml-auto size-3 text-amber-500" />
+                  ) : (
+                    <span className="ml-auto text-[10px] uppercase text-muted-foreground">
+                      {service.category}
+                    </span>
+                  )}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        )}
+
+        {eventResults.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Calendar">
+              {eventResults.map((event) => (
+                <CommandItem
+                  key={event.id}
+                  value={`calendar ${event.title} ${searchable(event.description)}`}
+                  onSelect={() => navigate("/calendar")}
+                >
+                  <Clock3 />
+                  <span className="truncate">{event.title}</span>
+                  <span className="ml-auto text-[10px] uppercase text-muted-foreground">
+                    {event.all_day ? "all day" : format(new Date(event.start_at), "EEE")}
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        )}
+
+        <CommandSeparator />
+        <CommandGroup heading="Tips">
+          <CommandItem onSelect={() => navigate("/todos")}> 
+            <FolderKanban />
+            Search opens projects and the matching feature page
+          </CommandItem>
+        </CommandGroup>
       </CommandList>
     </CommandDialog>
   );
