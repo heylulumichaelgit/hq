@@ -43,22 +43,23 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
+        className="w-full max-w-md"
       >
-        <Card className="w-full max-w-md mx-auto">
+        <Card className="border-muted/60 shadow-sm">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground text-2xl font-bold">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-xl font-bold text-primary-foreground">
               M
             </div>
-            <CardTitle className="text-2xl">Reset Password</CardTitle>
+            <CardTitle className="text-2xl">Reset password</CardTitle>
             <CardDescription>
               {sent
-                ? "Check your email for a reset link"
-                : "Enter your email to receive a password reset link"}
+                ? "Check your email for the reset link."
+                : "We’ll email you a link so you can get back into HQ without drama."}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -66,13 +67,12 @@ export default function ForgotPasswordPage() {
               <div className="space-y-4 text-center">
                 <CheckCircle2 className="mx-auto h-12 w-12 text-primary" />
                 <p className="text-sm text-muted-foreground">
-                  We sent a reset link to <strong>{email}</strong>. Check your
-                  inbox and click the link to set a new password.
+                  We sent a reset link to <strong>{email}</strong>. Open it, set a new password, and you’ll be back in.
                 </p>
                 <Link href="/login">
-                  <Button variant="outline" className="w-full h-9">
+                  <Button variant="outline" className="w-full h-10">
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Sign In
+                    Back to sign in
                   </Button>
                 </Link>
               </div>
@@ -87,31 +87,17 @@ export default function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="h-9"
+                    className="h-10"
                   />
                 </div>
-                {error && (
-                  <p className="text-sm text-destructive">{error}</p>
-                )}
-                <Button
-                  type="submit"
-                  className="w-full h-9"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    "Send Reset Link"
-                  )}
+                {error && <p className="text-sm text-destructive">{error}</p>}
+                <Button type="submit" className="w-full h-10" disabled={loading}>
+                  {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Send reset link"}
                 </Button>
                 <Link href="/login" className="block">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="w-full h-9"
-                  >
+                  <Button type="button" variant="ghost" className="w-full h-10">
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Sign In
+                    Back to sign in
                   </Button>
                 </Link>
               </form>

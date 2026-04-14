@@ -65,7 +65,7 @@ export function BootGate({ children }: { children: ReactNode }) {
       <div className="flex flex-col items-center gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         <p className="text-sm text-muted-foreground">
-          {retrying ? "Restoring your session…" : "Loading your family hub…"}
+          {retrying ? "Restoring your session…" : "Getting today ready…"}
         </p>
       </div>
 

@@ -85,8 +85,8 @@ export function TodoFilters() {
   const hasActiveFilters =
     activeFilterCount > 0 ||
     filters.search !== "" ||
-    filters.sortBy !== "created_at" ||
-    filters.sortOrder !== "desc";
+    filters.sortBy !== "due_date" ||
+    filters.sortOrder !== "asc";
 
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -148,31 +148,15 @@ export function TodoFilters() {
         )}
       </Button>
 
-      {/* Sort */}
-      <Select
-        value={`${filters.sortBy}:${filters.sortOrder}`}
-        onValueChange={(v) => {
-          const [sortBy, sortOrder] = v.split(":") as [
-            typeof filters.sortBy,
-            typeof filters.sortOrder,
-          ];
-          setFilter("sortBy", sortBy);
-          setFilter("sortOrder", sortOrder);
-        }}
+      <Button
+        variant="outline"
+        size="sm"
+        className="hidden sm:inline-flex h-8 gap-1.5 text-xs shrink-0"
+        onClick={() => setFilterSheetOpen(true)}
       >
-        <SelectTrigger className="h-8 w-auto gap-1.5 text-xs px-3 border rounded-md shrink-0">
-          <ArrowUpDown className="h-3 w-3" />
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="created_at:desc">Newest</SelectItem>
-          <SelectItem value="created_at:asc">Oldest</SelectItem>
-          <SelectItem value="due_date:asc">Due soonest</SelectItem>
-          <SelectItem value="due_date:desc">Due latest</SelectItem>
-          <SelectItem value="priority:desc">Priority ↑</SelectItem>
-          <SelectItem value="priority:asc">Priority ↓</SelectItem>
-        </SelectContent>
-      </Select>
+        <ArrowUpDown className="h-3.5 w-3.5" />
+        Sort
+      </Button>
 
       {/* Reset */}
       {hasActiveFilters && (
@@ -194,6 +178,35 @@ export function TodoFilters() {
           </SheetHeader>
 
           <div className="space-y-5 pb-6">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sort</p>
+              <Select
+                value={`${filters.sortBy}:${filters.sortOrder}`}
+                onValueChange={(v) => {
+                  const [sortBy, sortOrder] = v.split(":") as [
+                    typeof filters.sortBy,
+                    typeof filters.sortOrder,
+                  ];
+                  setFilter("sortBy", sortBy);
+                  setFilter("sortOrder", sortOrder);
+                }}
+              >
+                <SelectTrigger className="h-10 w-full text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="due_date:asc">Due soonest</SelectItem>
+                  <SelectItem value="due_date:desc">Due latest</SelectItem>
+                  <SelectItem value="created_at:desc">Newest</SelectItem>
+                  <SelectItem value="created_at:asc">Oldest</SelectItem>
+                  <SelectItem value="priority:desc">Priority ↑</SelectItem>
+                  <SelectItem value="priority:asc">Priority ↓</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Separator />
+
             {/* Status */}
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</p>

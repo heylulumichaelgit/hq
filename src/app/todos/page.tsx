@@ -15,7 +15,7 @@ export default function TodosPage() {
   useEffect(() => {
     setSlot(
       <>
-        <span className="text-sm font-semibold shrink-0">Inbox</span>
+        <span className="text-sm font-semibold shrink-0">Tasks</span>
         <div className="flex items-center rounded-md border p-0.5 text-xs shrink-0">
           <button
             onClick={() => setShowAll(false)}
