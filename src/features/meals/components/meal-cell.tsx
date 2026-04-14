@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Trash2, ExternalLink, ShoppingCart, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +13,9 @@ import {
 import { cn } from "@/lib/utils";
 import { useUpsertMeal, useDeleteMeal } from "../queries";
 import type { MealPlan, UpsertMealPayload } from "../queries";
+import { useAddGroceryItems } from "@/features/grocery/queries";
+import { parseMealToGroceryItems } from "../grocery";
+import { toast } from "sonner";
 
 interface MealCellProps {
   weekStart: string;
@@ -31,10 +34,12 @@ export function MealCell({
 }: MealCellProps) {
   const upsert = useUpsertMeal();
   const remove = useDeleteMeal();
+  const addGroceryItems = useAddGroceryItems();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(meal?.title ?? "");
   const [notes, setNotes] = useState(meal?.notes ?? "");
   const [recipeUrl, setRecipeUrl] = useState(meal?.recipe_url ?? "");
+  const [isAddingToGrocery, setIsAddingToGrocery] = useState(false);
 
   const handleOpen = (isOpen: boolean) => {
     if (isOpen) {
@@ -64,6 +69,38 @@ export function MealCell({
     if (!meal) return;
     await remove.mutateAsync(meal.id);
     setOpen(false);
+  };
+
+  const handleAddToGrocery = async () => {
+    if (!meal || isAddingToGrocery) return;
+
+    setIsAddingToGrocery(true);
+    try {
+      const parsedItems = await parseMealToGroceryItems(meal);
+      if (parsedItems.length === 0) {
+        toast.error("Couldn't find any ingredients to add");
+        return;
+      }
+
+      const basePosition = Math.floor(Date.now() / 1000);
+      await addGroceryItems.mutateAsync(
+        parsedItems.map((item, index) => ({
+          name: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+          category: item.category,
+          is_checked: false,
+          added_by: createdBy ?? null,
+          position: basePosition + index,
+        }))
+      );
+      toast.success(`Added ${parsedItems.length} grocery item${parsedItems.length === 1 ? "" : "s"}`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to add ingredients to grocery list");
+    } finally {
+      setIsAddingToGrocery(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -166,6 +203,23 @@ export function MealCell({
               Cancel
             </Button>
           </div>
+
+          {meal && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full h-8 text-xs"
+              onClick={handleAddToGrocery}
+              disabled={isAddingToGrocery || addGroceryItems.isPending}
+            >
+              {isAddingToGrocery ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <ShoppingCart className="size-3" />
+              )}
+              Add ingredients to grocery list
+            </Button>
+          )}
           {meal?.recipe_url && (
             <a
               href={meal.recipe_url}
