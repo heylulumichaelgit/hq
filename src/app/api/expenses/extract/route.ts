@@ -2,6 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const EXTRACT_TIMEOUT_MS = 30_000;
+
 const CATEGORIES = [
   "Groceries",
   "Dining",
@@ -54,6 +57,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (file.size > MAX_IMAGE_BYTES) {
+    return NextResponse.json(
+      { error: `Image too large (max ${MAX_IMAGE_BYTES / 1024 / 1024}MB)` },
+      { status: 413 }
+    );
+  }
+
   try {
     const arrayBuffer = await file.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString("base64");
@@ -66,20 +76,21 @@ export async function POST(request: NextRequest) {
 
     const anthropic = new Anthropic({ apiKey });
 
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 512,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: { type: "base64", media_type: mediaType, data: base64 },
-            },
-            {
-              type: "text",
-              text: `Extract expense details from this receipt image. Return ONLY valid JSON with these fields:
+    const response = await anthropic.messages.create(
+      {
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 512,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "image",
+                source: { type: "base64", media_type: mediaType, data: base64 },
+              },
+              {
+                type: "text",
+                text: `Extract expense details from this receipt image. Return ONLY valid JSON with these fields:
 
 {
   "amount": <number or null>,
@@ -97,11 +108,13 @@ Rules:
 - category must be exactly one of the listed values
 - Use null for any field you cannot determine
 - Return ONLY the JSON object, no markdown fences or extra text`,
-            },
-          ],
-        },
-      ],
-    });
+              },
+            ],
+          },
+        ],
+      },
+      { timeout: EXTRACT_TIMEOUT_MS }
+    );
 
     const text =
       response.content[0].type === "text" ? response.content[0].text : "";

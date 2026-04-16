@@ -164,6 +164,20 @@ export interface Database {
           updated_at?: string;
         };
       };
+      daily_reminder_runs: {
+        Row: {
+          run_date: string;
+          started_at: string;
+        };
+        Insert: {
+          run_date: string;
+          started_at?: string;
+        };
+        Update: {
+          run_date?: string;
+          started_at?: string;
+        };
+      };
       push_subscriptions: {
         Row: {
           id: string;

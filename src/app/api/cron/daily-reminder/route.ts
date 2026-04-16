@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
 import { format, parseISO, startOfDay, endOfDay } from "date-fns";
@@ -62,6 +63,23 @@ export async function GET(request: NextRequest) {
   const todayStr = format(nowLocal, "yyyy-MM-dd");
   const dayStart = startOfDay(nowLocal).toISOString();
   const dayEnd = endOfDay(nowLocal).toISOString();
+
+  // Idempotency: claim today's run before sending. If the row already exists
+  // (Vercel retry, duplicate invocation), skip the whole run — prevents
+  // duplicate pushes. Uses the service-role client to bypass RLS.
+  const admin = createAdminClient();
+  const { error: claimError } = await admin
+    .from("daily_reminder_runs")
+    .insert({ run_date: todayStr } as never);
+  if (claimError) {
+    if (claimError.code === "23505") {
+      return NextResponse.json({ ok: true, skipped: "already sent today", todayStr });
+    }
+    return NextResponse.json(
+      { error: "Failed to claim run", detail: claimError.message },
+      { status: 500 }
+    );
+  }
 
   // ── Fetch todos ──────────────────────────────────────────
   const { data: todos = [] } = await supabase

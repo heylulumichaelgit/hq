@@ -58,30 +58,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Explicit session check used by the safety timeout and on PWA resume.
     // This is the escape hatch for the case where onAuthStateChange never
-    // fires (iOS bfcache restore, hung fetch, etc.).
-    const recoverSession = async () => {
-      if (disposed) return;
-      const result = await rehydrateSession();
-      if (disposed) return;
+    // fires (iOS bfcache restore, hung fetch, etc.). iOS can fire
+    // visibilitychange + pageshow + focus in quick succession on resume, so
+    // we dedupe concurrent calls behind a single in-flight promise.
+    let inFlightRecovery: Promise<void> | null = null;
+    const recoverSession = (): Promise<void> => {
+      if (inFlightRecovery) return inFlightRecovery;
+      inFlightRecovery = (async () => {
+        if (disposed) return;
+        const result = await rehydrateSession();
+        if (disposed) return;
 
-      if (result.status === "authenticated") {
-        const userChanged = result.session.user.id !== lastKnownUserId;
-        await applyAuthenticated(result.session.user, userChanged);
-        return;
-      }
+        if (result.status === "authenticated") {
+          const userChanged = result.session.user.id !== lastKnownUserId;
+          await applyAuthenticated(result.session.user, userChanged);
+          return;
+        }
 
-      if (result.status === "unauthenticated") {
-        redirectToLogin();
-        return;
-      }
+        if (result.status === "unauthenticated") {
+          redirectToLogin();
+          return;
+        }
 
-      // Transient error. If we already had a user, keep the UI unblocked
-      // so cached data stays visible. If we had no user, leave isReady=false
-      // so BootGate continues showing the splash with its retry button.
-      const existingUser = useAuthStore.getState().user;
-      if (existingUser) {
-        useAuthStore.setState({ isReady: true, isLoading: false });
-      }
+        // Transient error. If we already had a user, keep the UI unblocked
+        // so cached data stays visible. If we had no user, leave isReady=false
+        // so BootGate continues showing the splash with its retry button.
+        const existingUser = useAuthStore.getState().user;
+        if (existingUser) {
+          useAuthStore.setState({ isReady: true, isLoading: false });
+        }
+      })().finally(() => {
+        inFlightRecovery = null;
+      });
+      return inFlightRecovery;
     };
 
     // If onAuthStateChange hasn't fired by this deadline, manually recover.

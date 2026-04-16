@@ -55,6 +55,15 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
+// ─── Mock Supabase admin client (used by idempotency claim) ──────────────────
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: vi.fn(() => ({
+    from: vi.fn(() => ({
+      insert: vi.fn().mockResolvedValue({ error: null }),
+    })),
+  })),
+}));
+
 // ─── Helper: build a NextRequest ─────────────────────────────────────────────
 const makeReq = (auth?: string) =>
   new NextRequest("http://localhost/api/cron/daily-reminder", {
